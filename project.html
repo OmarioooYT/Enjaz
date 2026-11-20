@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enjaz OS | Team Project Organizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Cairo', 'Inter', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+          },
+          colors: {
+            obsidian: '#09090b',
+            surface: '#111114',
+            surfaceHover: '#18181c',
+            borderSubtle: '#222228',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #09090b;
+      color: #f4f4f5;
+      font-family: 'Cairo', 'Inter', sans-serif;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+    .kanban-col.drag-over {
+      background-color: rgba(16, 185, 129, 0.06);
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+    .task-card {
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .task-card:hover {
+      border-color: #3f3f46;
+      box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+    }
+    .task-card.dragging {
+      opacity: 0.45;
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body class="h-screen overflow-hidden flex selection:bg-emerald-500/30 selection:text-emerald-200">
+
+  <!-- Mobile Sidebar Backdrop -->
+  <div id="sidebarBackdrop" onclick="toggleMobileSidebar(false)" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 hidden lg:hidden"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="fixed lg:static inset-y-0 right-0 z-50 w-72 bg-surface border-l border-borderSubtle flex flex-col transform translate-x-full lg:translate-x-0 transition-transform duration-200 shrink-0">
+    <!-- Brand -->
+    <div class="h-16 px-5 border-b border-borderSubtle flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-extrabold text-sm shadow-lg shadow-emerald-500/20">
+          E
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-sm tracking-tight text-white">إنجاز OS</span>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">PRO</span>
+          </div>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span id="syncDot" class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+            <span id="syncText" class="text-[10px] text-zinc-400">جاري الاتصال...</span>
+          </div>
+        </div>
+      </div>
+      <button onclick="toggleMobileSidebar(false)" class="lg:hidden text-zinc-400 hover:text-white p-1">✕</button>
+    </div>
+
+    <!-- User Identity -->
+    <div class="p-4 border-b border-borderSubtle">
+      <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-2">عضو الفريق الحالي</label>
+      <div class="flex items-center gap-2.5 bg-obsidian border border-borderSubtle rounded-xl px-3 py-2 focus-within:border-emerald-500/50 transition">
+        <div id="userAvatar" class="w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0">
+          ع
+        </div>
+        <input id="userNameInput" type="text" placeholder="اكتب اسمك..."
+          class="bg-transparent text-xs font-bold text-zinc-100 focus:outline-none w-full" />
+      </div>
+    </div>
+
+    <!-- Projects Navigation -->
+    <div class="flex-1 overflow-y-auto p-3 space-y-1">
+      <div class="px-2 py-1.5 flex items-center justify-between">
+        <span class="text-[11px] font-bold text-zinc-500">المشاريع (Workspaces)</span>
+        <button onclick="openProjectModal()" title="مشروع جديد"
+          class="text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-0.5 rounded-md transition">
+          + جديد
+        </button>
+      </div>
+      <div id="sidebarProjects" class="space-y-1">
+        <!-- Projects injected dynamically -->
+      </div>
+    </div>
+
+    <!-- Join by Code Footer -->
+    <div class="p-3 border-t border-borderSubtle bg-obsidian/40 space-y-2">
+      <div class="flex items-center gap-1.5">
+        <input id="joinCodeInput" type="text" placeholder="كود مشروع (PRJ-...)"
+          class="bg-surface border border-borderSubtle rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500/50 w-full font-mono" />
+        <button onclick="joinProjectByCode()"
+          class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold px-3 py-1.5 rounded-lg transition shrink-0">
+          دخول
+        </button>
+      </div>
+      <p class="text-[10px] text-zinc-600 font-mono text-center truncate">ptyahjbxuztnatjbgzoo.supabase.co</p>
+    </div>
+  </aside>
+
+  <!-- Main Workspace Area -->
+  <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+
+    <!-- Top Utility Header -->
+    <header class="h-16 border-b border-borderSubtle bg-obsidian/90 backdrop-blur-md px-4 lg:px-6 flex items-center justify-between gap-3 shrink-0">
+      <div class="flex items-center gap-3 min-w-0">
+        <button onclick="toggleMobileSidebar(true)" class="lg:hidden p-2 rounded-lg bg-surface border border-borderSubtle text-zinc-300">
+          ☰
+        </button>
+        <div class="flex items-center gap-2 min-w-0">
+          <span id="headerProjIcon" class="text-xl shrink-0">🚀</span>
+          <h1 id="headerProjTitle" class="font-extrabold text-base sm:text-lg text-white truncate">جاري التحميل...</h1>
+          <button onclick="copyProjectCode()" id="headerProjCode" title="نسخ كود المشروع"
+            class="hidden sm:inline-flex items-center gap-1 text-[11px] font-mono bg-surface hover:bg-surfaceHover text-zinc-400 hover:text-emerald-400 px-2 py-0.5 rounded-md border border-borderSubtle transition shrink-0">
+            ---
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & Actions -->
+      <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+        <div class="relative hidden md:block">
+          <input id="searchInput" type="text" oninput="renderWorkspace()" placeholder="بحث في المهام..."
+            class="bg-surface border border-borderSubtle rounded-xl pr-8 pl-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 w-48 lg:w-60 transition" />
+          <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">🔍</span>
+        </div>
+
+        <!-- View Mode Switch -->
+        <div class="flex items-center bg-surface border border-borderSubtle rounded-xl p-0.5">
+          <button onclick="setViewMode('board')" id="viewBtn-board"
+            class="px-2.5 py-1 rounded-lg text-xs font-bold transition bg-zinc-800 text-white">
+            Kanban
+          </button>
+          <button onclick="setViewMode('list')" id="viewBtn-list"
+            class="px-2.5 py-1 rounded-lg text-xs font-bold transition text-zinc-400 hover:text-white">
+            جدول
+          </button>
+        </div>
+
+        <button onclick="openProjectModal(true)" title="إعدادات المشروع"
+          class="p-2 rounded-xl bg-surface hover:bg-surfaceHover border border-borderSubtle text-zinc-400 hover:text-white text-xs transition">
+          ⚙️
+        </button>
+
+        <button onclick="shareCurrentProject()"
+          class="bg-surface hover:bg-surfaceHover border border-borderSubtle text-zinc-200 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+          <span>🔗</span>
+          <span class="hidden sm:inline">مشاركة</span>
+        </button>
+
+        <button onclick="openTaskModal()"
+          class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center gap-1.5">
+          <span>+</span>
+          <span>تاسك جديد</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Content -->
+    <main class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5">
+
+      <!-- Schema Upgrade Alert (Shows only if new columns missing) -->
+      <div id="schemaAlert" class="hidden bg-amber-950/40 border border-amber-500/30 rounded-2xl p-4 text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <p class="font-bold text-amber-400 text-sm">⚡ تحديث بسيط للداتابيز مطلوب لمميزات الـ Kanban والـ Deadline</p>
+          <p class="mt-0.5 text-amber-200/80">شغّل كود الـ ALTER TABLE في Supabase SQL Editor عشان تحفظ حالة المهمة (In Progress) والـ Due Date والـ Notes.</p>
+        </div>
+        <button onclick="document.getElementById('schemaAlert').classList.add('hidden')" class="text-amber-400 hover:text-white font-bold shrink-0">إخفاء</button>
+      </div>
+
+      <!-- KPI Overview Row -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-surface border border-borderSubtle rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-zinc-400 font-medium">إجمالي المهام</span>
+            <span class="text-xs px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 font-mono" id="kpiTotal">0</span>
+          </div>
+          <p id="projDescLine" class="text-[11px] text-zinc-500 mt-2 truncate">---</p>
+        </div>
+
+        <div class="bg-surface border border-borderSubtle rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-zinc-400 font-medium">جاري العمل</span>
+            <span class="text-xs px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono" id="kpiInProgress">0</span>
+          </div>
+          <p class="text-[11px] text-zinc-500 mt-2">مهام شغال عليها الفريق دلوقتي</p>
+        </div>
+
+        <div class="bg-surface border border-borderSubtle rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-zinc-400 font-medium">نسبة الإنجاز</span>
+            <span class="text-xs font-bold text-emerald-400 font-mono" id="kpiPercent">0%</span>
+          </div>
+          <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-3">
+            <div id="kpiProgressBar" class="h-full bg-gradient-to-l from-emerald-500 to-teal-400 transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="bg-surface border border-borderSubtle rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-zinc-400 font-medium">أولوية عالية / متأخر</span>
+            <span class="text-xs px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20 font-mono" id="kpiUrgent">0</span>
+          </div>
+          <p class="text-[11px] text-zinc-500 mt-2">تحتاج تركيز سريع من الفريق</p>
+        </div>
+      </div>
+
+      <!-- Filter & Team Members Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <!-- Team Pills -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-[11px] font-bold text-zinc-500 ml-1">الفريق:</span>
+          <div id="teamPills" class="flex items-center gap-1.5 flex-wrap">
+            <!-- Injected dynamically -->
+          </div>
+        </div>
+
+        <!-- Priority Filter -->
+        <div class="flex items-center gap-2">
+          <select id="priorityFilter" onchange="renderWorkspace()"
+            class="bg-surface border border-borderSubtle rounded-xl px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-emerald-500/50">
+            <option value="all">كل الأولويات</option>
+            <option value="high">🔥 أولوية عالية</option>
+            <option value="medium">⚡ أولوية متوسطة</option>
+            <option value="low">🌱 أولوية عادية</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- KANBAN BOARD VIEW -->
+      <div id="boardView" class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start pb-10">
+        <!-- Column: To Do -->
+        <div class="kanban-col bg-surface/60 border border-borderSubtle rounded-2xl p-3.5 flex flex-col gap-3 min-h-[380px]"
+             ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'todo')">
+          <div class="flex items-center justify-between px-1">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-zinc-400"></span>
+              <h3 class="text-xs font-extrabold text-zinc-200">قيد الانتظار (To Do)</h3>
+              <span id="count-todo" class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">0</span>
+            </div>
+            <button onclick="openTaskModal(null, 'todo')" class="text-zinc-500 hover:text-white text-sm font-bold px-1.5">+</button>
+          </div>
+          <div id="col-todo" class="space-y-2.5 flex-1"></div>
+        </div>
+
+        <!-- Column: In Progress -->
+        <div class="kanban-col bg-surface/60 border border-borderSubtle rounded-2xl p-3.5 flex flex-col gap-3 min-h-[380px]"
+             ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'in_progress')">
+          <div class="flex items-center justify-between px-1">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+              <h3 class="text-xs font-extrabold text-zinc-200">جاري العمل (In Progress)</h3>
+              <span id="count-in_progress" class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400">0</span>
+            </div>
+            <button onclick="openTaskModal(null, 'in_progress')" class="text-zinc-500 hover:text-white text-sm font-bold px-1.5">+</button>
+          </div>
+          <div id="col-in_progress" class="space-y-2.5 flex-1"></div>
+        </div>
+
+        <!-- Column: Done -->
+        <div class="kanban-col bg-surface/60 border border-borderSubtle rounded-2xl p-3.5 flex flex-col gap-3 min-h-[380px]"
+             ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'done')">
+          <div class="flex items-center justify-between px-1">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <h3 class="text-xs font-extrabold text-zinc-200">مكتمل (Done)</h3>
+              <span id="count-done" class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">0</span>
+            </div>
+            <button onclick="openTaskModal(null, 'done')" class="text-zinc-500 hover:text-white text-sm font-bold px-1.5">+</button>
+          </div>
+          <div id="col-done" class="space-y-2.5 flex-1"></div>
+        </div>
+      </div>
+
+      <!-- LIST / TABLE VIEW -->
+      <div id="listView" class="hidden bg-surface border border-borderSubtle rounded-2xl overflow-hidden mb-10">
+        <div class="overflow-x-auto">
+          <table class="w-full text-right border-collapse">
+            <thead>
+              <tr class="border-b border-borderSubtle bg-obsidian/50 text-[11px] text-zinc-400">
+                <th class="py-3 px-4 font-bold w-10">تم</th>
+                <th class="py-3 px-4 font-bold">المهمة</th>
+                <th class="py-3 px-4 font-bold">الحالة</th>
+                <th class="py-3 px-4 font-bold">الأولوية</th>
+                <th class="py-3 px-4 font-bold">المسؤول</th>
+                <th class="py-3 px-4 font-bold">الموعد النهائي</th>
+                <th class="py-3 px-4 font-bold">القسم</th>
+                <th class="py-3 px-4 font-bold text-left">إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="listTableBody" class="divide-y divide-borderSubtle text-xs">
+              <!-- Rows injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Task Create / Edit Drawer Modal -->
+  <div id="taskModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-surface border border-borderSubtle rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
+      <div class="px-6 py-4 border-b border-borderSubtle flex items-center justify-between">
+        <h3 id="taskModalTitle" class="text-base font-extrabold text-white">إضافة تاسك جديد</h3>
+        <button onclick="closeTaskModal()" class="text-zinc-400 hover:text-white text-sm">✕</button>
+      </div>
+      <form id="taskForm" onsubmit="saveTask(event)" class="p-6 space-y-4">
+        <input type="hidden" id="editTaskId" />
+
+        <div>
+          <label class="text-xs font-bold text-zinc-400 block mb-1.5">عنوان المهمة *</label>
+          <input id="fTaskTitle" type="text" required placeholder="مثال: تصميم واجهة تسجيل الدخول وربطها بالـ API"
+            class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-zinc-400 block mb-1.5">تفاصيل وملاحظات (اختياري)</label>
+          <textarea id="fTaskNotes" rows="3" placeholder="اكتب أي تفاصيل، لينكات، أو خطوات مطلوبة لتنفيذ المهمة..."
+            class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3.5 py-2 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 resize-none"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold text-zinc-400 block mb-1.5">الحالة</label>
+            <select id="fTaskStatus" class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              <option value="todo">⚪ قيد الانتظار (To Do)</option>
+              <option value="in_progress">🟡 جاري العمل (In Progress)</option>
+              <option value="done">🟢 مكتمل (Done)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-zinc-400 block mb-1.5">الأولوية</label>
+            <select id="fTaskPriority" class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              <option value="high">🔥 عالية (High)</option>
+              <option value="medium" selected>⚡ متوسطة (Medium)</option>
+              <option value="low">🌱 عادية (Low)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="text-xs font-bold text-zinc-400 block mb-1.5">المسؤول</label>
+            <input id="fTaskAssignee" type="text" placeholder="مثال: سيف"
+              class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="text-xs font-bold text-zinc-400 block mb-1.5">القسم / Tag</label>
+            <input id="fTaskCategory" type="text" placeholder="مثال: Frontend"
+              class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="text-xs font-bold text-zinc-400 block mb-1.5">الموعد النهائي</label>
+            <input id="fTaskDueDate" type="date"
+              class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-borderSubtle">
+          <button type="button" id="deleteTaskBtn" onclick="deleteEditingTask()"
+            class="hidden px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold transition">
+            🗑️ حذف التاسك
+          </button>
+          <div class="flex items-center gap-2 mr-auto">
+            <button type="button" onclick="closeTaskModal()" class="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition">إلغاء</button>
+            <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/20">حفظ المهمة</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Project Create / Edit Modal -->
+  <div id="projectModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-surface border border-borderSubtle rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
+      <div class="px-6 py-4 border-b border-borderSubtle flex items-center justify-between">
+        <h3 id="projectModalTitle" class="text-base font-extrabold text-white">إنشاء مشروع جديد</h3>
+        <button onclick="closeProjectModal()" class="text-zinc-400 hover:text-white text-sm">✕</button>
+      </div>
+      <div class="p-6 space-y-4">
+        <input type="hidden" id="editProjectMode" value="create" />
+        <div>
+          <label class="text-xs font-bold text-zinc-400 block mb-1.5">اسم المشروع *</label>
+          <input id="pName" type="text" placeholder="مثال: مشروع التخرج / تطبيق الموبايل"
+            class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500" />
+        </div>
+        <div>
+          <label class="text-xs font-bold text-zinc-400 block mb-1.5">وصف المشروع</label>
+          <input id="pDesc" type="text" placeholder="هدف المشروع والمهام الأساسية للفريق..."
+            class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" />
+        </div>
+        <div>
+          <label class="text-xs font-bold text-zinc-400 block mb-1.5">أيقونة المشروع</label>
+          <div class="flex items-center gap-2">
+            <input id="pIcon" type="text" value="🚀" class="w-16 text-center bg-obsidian border border-borderSubtle rounded-xl py-2 text-lg" />
+            <div class="flex gap-1.5 flex-wrap">
+              <button type="button" onclick="document.getElementById('pIcon').value='🚀'" class="p-1.5 rounded-lg bg-obsidian hover:bg-zinc-800 border border-borderSubtle">🚀</button>
+              <button type="button" onclick="document.getElementById('pIcon').value='💻'" class="p-1.5 rounded-lg bg-obsidian hover:bg-zinc-800 border border-borderSubtle">💻</button>
+              <button type="button" onclick="document.getElementById('pIcon').value='⚙️'" class="p-1.5 rounded-lg bg-obsidian hover:bg-zinc-800 border border-borderSubtle">⚙️</button>
+              <button type="button" onclick="document.getElementById('pIcon').value='🎯'" class="p-1.5 rounded-lg bg-obsidian hover:bg-zinc-800 border border-borderSubtle">🎯</button>
+              <button type="button" onclick="document.getElementById('pIcon').value='📱'" class="p-1.5 rounded-lg bg-obsidian hover:bg-zinc-800 border border-borderSubtle">📱</button>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center justify-between pt-3 border-t border-borderSubtle">
+          <button type="button" id="deleteProjBtn" onclick="deleteCurrentProject()"
+            class="hidden px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold transition">
+            🗑️ حذف المشروع
+          </button>
+          <div class="flex items-center gap-2 mr-auto">
+            <button type="button" onclick="closeProjectModal()" class="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-300 text-xs font-bold">إلغاء</button>
+            <button type="button" onclick="saveProject()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">حفظ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-5 left-5 bg-zinc-900 border border-emerald-500/40 text-zinc-100 px-4 py-3 rounded-xl shadow-2xl text-xs font-bold hidden z-50"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://ptyahjbxuztnatjbgzoo.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_GcfG0NF3sVVWewXxBJpcNw_YWmg9IGd';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let projects = [];
+    let tasks = [];
+    let activeProjectId = null;
+    let viewMode = 'board'; // 'board' | 'list'
+    let selectedAssignee = 'all';
+    let draggedTaskId = null;
+
+    // Helpers
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function getTaskStatus(t) {
+      if (t.status && ['todo', 'in_progress', 'done'].includes(t.status)) return t.status;
+      return t.done ? 'done' : 'todo';
+    }
+
+    function isOverdue(dateStr, status) {
+      if (!dateStr || status === 'done') return false;
+      const today = new Date().toISOString().split('T')[0];
+      return dateStr < today;
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.remove('hidden');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => t.classList.add('hidden'), 3200);
+    }
+
+    function toggleMobileSidebar(open) {
+      const sb = document.getElementById('sidebar');
+      const bd = document.getElementById('sidebarBackdrop');
+      if (open) {
+        sb.classList.remove('translate-x-full');
+        bd.classList.remove('hidden');
+      } else {
+        sb.classList.add('translate-x-full');
+        bd.classList.add('hidden');
+      }
+    }
+
+    // Identity setup
+    const userNameInput = document.getElementById('userNameInput');
+    const savedName = localStorage.getItem('enjaz_username') || 'عمر';
+    userNameInput.value = savedName;
+    updateUserAvatar(savedName);
+
+    userNameInput.addEventListener('input', (e) => {
+      const v = e.target.value.trim();
+      localStorage.setItem('enjaz_username', v);
+      updateUserAvatar(v || '؟');
+    });
+
+    function updateUserAvatar(name) {
+      document.getElementById('userAvatar').textContent = (name || '؟').charAt(0).toUpperCase();
+    }
+
+    // URL param check
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('project')) activeProjectId = urlParams.get('project');
+
+    // Load Data
+    async function loadAllData() {
+      const syncDot = document.getElementById('syncDot');
+      const syncText = document.getElementById('syncText');
+      try {
+        const { data: projData, error: projErr } = await db
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (projErr) throw projErr;
+
+        projects = projData || [];
+        if (projects.length === 0) {
+          const defaultId = 'PRJ-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+          const newProj = {
+            id: defaultId,
+            name: 'مشروع الفريق',
+            description: 'مساحة عمل منظمة لإدارة مهام الفريق لحظياً',
+            icon: '🚀',
+            created_at: Date.now()
+          };
+          await db.from('projects').insert([newProj]);
+          projects = [newProj];
+        }
+
+        if (!activeProjectId || !projects.some(p => p.id === activeProjectId)) {
+          activeProjectId = projects[0].id;
+        }
+
+        const { data: taskData, error: taskErr } = await db
+          .from('tasks')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (taskErr) throw taskErr;
+
+        tasks = taskData || [];
+        syncDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
+        syncText.textContent = 'متصل لايف (Supabase)';
+        renderAll();
+      } catch (err) {
+        console.error(err);
+        syncDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-500';
+        syncText.textContent = 'خطأ في الاتصال';
+      }
+    }
+
+    function subscribeRealtime() {
+      db.channel('enjaz-pro-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => loadAllData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadAllData())
+        .subscribe();
+    }
+
+    function renderAll() {
+      renderSidebar();
+      renderWorkspace();
+    }
+
+    function renderSidebar() {
+      const container = document.getElementById('sidebarProjects');
+      container.innerHTML = '';
+
+      projects.forEach(p => {
+        const isActive = p.id === activeProjectId;
+        const pTasks = tasks.filter(t => t.project_id === p.id);
+        const doneCount = pTasks.filter(t => getTaskStatus(t) === 'done').length;
+
+        const btn = document.createElement('button');
+        btn.className = `w-full text-right px-3 py-2.5 rounded-xl flex items-center justify-between gap-2 transition ${
+          isActive
+            ? 'bg-emerald-500/10 text-white border border-emerald-500/30'
+            : 'text-zinc-400 hover:bg-surfaceHover hover:text-zinc-200 border border-transparent'
+        }`;
+        btn.innerHTML = `
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="text-base shrink-0">${escapeHtml(p.icon || '📁')}</span>
+            <span class="text-xs font-bold truncate">${escapeHtml(p.name)}</span>
+          </div>
+          <span class="text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
+            isActive ? 'bg-emerald-500/20 text-emerald-300' : 'bg-zinc-800/80 text-zinc-500'
+          }">${doneCount}/${pTasks.length}</span>
+        `;
+        btn.onclick = () => {
+          activeProjectId = p.id;
+          selectedAssignee = 'all';
+          window.history.replaceState({}, '', `?project=${p.id}`);
+          toggleMobileSidebar(false);
+          renderAll();
+        };
+        container.appendChild(btn);
+      });
+
+      const activeProj = projects.find(p => p.id === activeProjectId);
+      if (activeProj) {
+        document.getElementById('headerProjIcon').textContent = activeProj.icon || '🚀';
+        document.getElementById('headerProjTitle').textContent = activeProj.name;
+        document.getElementById('headerProjCode').textContent = activeProj.id;
+        document.getElementById('projDescLine').textContent = activeProj.description || 'لا يوجد وصف للمشروع';
+      }
+    }
+
+    function renderWorkspace() {
+      const projTasks = tasks.filter(t => t.project_id === activeProjectId);
+
+      // KPIs
+      const total = projTasks.length;
+      const inProg = projTasks.filter(t => getTaskStatus(t) === 'in_progress').length;
+      const done = projTasks.filter(t => getTaskStatus(t) === 'done').length;
+      const urgent = projTasks.filter(t => {
+        const st = getTaskStatus(t);
+        return st !== 'done' && (t.priority === 'high' || isOverdue(t.due_date, st));
+      }).length;
+      const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+
+      document.getElementById('kpiTotal').textContent = total;
+      document.getElementById('kpiInProgress').textContent = inProg;
+      document.getElementById('kpiPercent').textContent = `${percent}%`;
+      document.getElementById('kpiProgressBar').style.width = `${percent}%`;
+      document.getElementById('kpiUrgent').textContent = urgent;
+
+      // Team Pills
+      const membersSet = new Set();
+      projTasks.forEach(t => {
+        if (t.assignee && t.assignee.trim()) membersSet.add(t.assignee.trim());
+      });
+      const teamPills = document.getElementById('teamPills');
+      teamPills.innerHTML = '';
+
+      const allPill = document.createElement('button');
+      allPill.className = `px-2.5 py-1 rounded-lg text-[11px] font-bold transition border ${
+        selectedAssignee === 'all'
+          ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+          : 'bg-surface text-zinc-400 border-borderSubtle hover:text-white'
+      }`;
+      allPill.textContent = `الكل (${total})`;
+      allPill.onclick = () => { selectedAssignee = 'all'; renderWorkspace(); };
+      teamPills.appendChild(allPill);
+
+      Array.from(membersSet).forEach(member => {
+        const count = projTasks.filter(t => (t.assignee || '').trim() === member).length;
+        const pill = document.createElement('button');
+        pill.className = `px-2.5 py-1 rounded-lg text-[11px] font-bold transition border flex items-center gap-1.5 ${
+          selectedAssignee === member
+            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+            : 'bg-surface text-zinc-400 border-borderSubtle hover:text-white'
+        }`;
+        pill.innerHTML = `<span class="w-4 h-4 rounded-full bg-zinc-800 text-[9px] flex items-center justify-center text-zinc-200">${escapeHtml(member.charAt(0))}</span><span>${escapeHtml(member)} (${count})</span>`;
+        pill.onclick = () => { selectedAssignee = member; renderWorkspace(); };
+        teamPills.appendChild(pill);
+      });
+
+      // Apply Filters
+      const searchQ = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+      const prioFlt = document.getElementById('priorityFilter').value;
+
+      const filtered = projTasks.filter(t => {
+        if (selectedAssignee !== 'all' && (t.assignee || '').trim() !== selectedAssignee) return false;
+        if (prioFlt !== 'all' && (t.priority || 'medium') !== prioFlt) return false;
+        if (searchQ) {
+          const hay = `${t.title || ''} ${t.notes || ''} ${t.category || ''} ${t.assignee || ''}`.toLowerCase();
+          if (!hay.includes(searchQ)) return false;
+        }
+        return true;
+      });
+
+      if (viewMode === 'board') {
+        document.getElementById('boardView').classList.remove('hidden');
+        document.getElementById('listView').classList.add('hidden');
+        renderKanban(filtered);
+      } else {
+        document.getElementById('boardView').classList.add('hidden');
+        document.getElementById('listView').classList.remove('hidden');
+        renderList(filtered);
+      }
+    }
+
+    function renderKanban(list) {
+      const cols = { todo: [], in_progress: [], done: [] };
+      list.forEach(t => cols[getTaskStatus(t)].push(t));
+
+      const prioMeta = {
+        high: { label: 'عالية', cls: 'bg-rose-500/10 text-rose-400 border-rose-500/20' },
+        medium: { label: 'متوسطة', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+        low: { label: 'عادية', cls: 'bg-sky-500/10 text-sky-400 border-sky-500/20' }
+      };
+
+      ['todo', 'in_progress', 'done'].forEach(status => {
+        document.getElementById(`count-${status}`).textContent = cols[status].length;
+        const container = document.getElementById(`col-${status}`);
+        container.innerHTML = '';
+
+        if (cols[status].length === 0) {
+          container.innerHTML = `<div class="border border-dashed border-borderSubtle rounded-xl p-6 text-center text-[11px] text-zinc-600">اسحب تاسك هنا أو اضغط + للإضافة</div>`;
+          return;
+        }
+
+        cols[status].forEach(task => {
+          const pr = prioMeta[task.priority] || prioMeta.medium;
+          const overdue = isOverdue(task.due_date, status);
+
+          const card = document.createElement('div');
+          card.draggable = true;
+          card.className = 'task-card bg-obsidian border border-borderSubtle rounded-xl p-3.5 cursor-pointer space-y-2.5';
+          card.ondragstart = (e) => {
+            draggedTaskId = task.id;
+            card.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+          };
+          card.ondragend = () => {
+            card.classList.remove('dragging');
+            draggedTaskId = null;
+          };
+          card.onclick = (e) => {
+            if (e.target.closest('button')) return;
+            openTaskModal(task.id);
+          };
+
+          card.innerHTML = `
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border ${pr.cls}">${pr.label}</span>
+                ${task.category ? `<span class="text-[10px] font-medium px-2 py-0.5 rounded-md bg-zinc-800/90 text-zinc-300">${escapeHtml(task.category)}</span>` : ''}
+              </div>
+              <button onclick="quickCycleStatus('${task.id}')" title="تغيير الحالة السريع"
+                class="w-6 h-6 rounded-lg border flex items-center justify-center text-[11px] transition shrink-0 ${
+                  status === 'done'
+                    ? 'bg-emerald-500 border-emerald-500 text-obsidian font-extrabold'
+                    : status === 'in_progress'
+                      ? 'bg-amber-500/15 border-amber-500/40 text-amber-400'
+                      : 'border-zinc-700 text-zinc-500 hover:border-emerald-500 hover:text-emerald-400'
+                }">
+                ${status === 'done' ? '✓' : status === 'in_progress' ? '▶' : '○'}
+              </button>
+            </div>
+
+            <p class="text-xs sm:text-sm font-bold leading-relaxed ${status === 'done' ? 'line-through text-zinc-500' : 'text-zinc-100'}">
+              ${escapeHtml(task.title)}
+            </p>
+
+            ${task.notes ? `<p class="text-[11px] text-zinc-500 line-clamp-2">${escapeHtml(task.notes)}</p>` : ''}
+
+            <div class="pt-2 border-t border-borderSubtle/70 flex items-center justify-between gap-2 text-[10px]">
+              <div class="flex items-center gap-2 min-w-0">
+                ${task.assignee ? `
+                  <span class="inline-flex items-center gap-1 text-zinc-300 font-semibold truncate">
+                    <span class="w-4 h-4 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-[9px] shrink-0">${escapeHtml(task.assignee.charAt(0))}</span>
+                    ${escapeHtml(task.assignee)}
+                  </span>` : `<span class="text-zinc-600">غير معيّن</span>`}
+              </div>
+
+              <div class="flex items-center gap-1.5 shrink-0">
+                ${task.due_date ? `
+                  <span class="font-mono px-1.5 py-0.5 rounded ${overdue ? 'bg-rose-500/15 text-rose-400 font-bold' : 'bg-zinc-900 text-zinc-400'}">
+                    📅 ${escapeHtml(task.due_date)}
+                  </span>` : ''}
+                ${status === 'done' && task.completed_by ? `
+                  <span class="text-emerald-400 font-bold">✅ ${escapeHtml(task.completed_by)}</span>` : ''}
+              </div>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      });
+    }
+
+    function renderList(list) {
+      const tbody = document.getElementById('listTableBody');
+      tbody.innerHTML = '';
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-10 text-center text-zinc-500">لا توجد مهام مطابقة للبحث</td></tr>`;
+        return;
+      }
+
+      const statusLabels = {
+        todo: '<span class="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300">قيد الانتظار</span>',
+        in_progress: '<span class="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400">جاري العمل</span>',
+        done: '<span class="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400">مكتمل</span>'
+      };
+      const prioLabels = {
+        high: '<span class="text-rose-400 font-bold">🔥 عالية</span>',
+        medium: '<span class="text-amber-400">⚡ متوسطة</span>',
+        low: '<span class="text-sky-400">🌱 عادية</span>'
+      };
+
+      list.forEach(task => {
+        const st = getTaskStatus(task);
+        const overdue = isOverdue(task.due_date, st);
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-surfaceHover/60 transition cursor-pointer';
+        tr.onclick = (e) => {
+          if (e.target.closest('button')) return;
+          openTaskModal(task.id);
+        };
+        tr.innerHTML = `
+          <td class="py-3 px-4">
+            <button onclick="quickCycleStatus('${task.id}')"
+              class="w-5 h-5 rounded-md border flex items-center justify-center text-[10px] ${
+                st === 'done' ? 'bg-emerald-500 border-emerald-500 text-obsidian font-bold' : 'border-zinc-600 text-zinc-400'
+              }">${st === 'done' ? '✓' : ''}</button>
+          </td>
+          <td class="py-3 px-4">
+            <p class="font-bold ${st === 'done' ? 'line-through text-zinc-500' : 'text-zinc-100'}">${escapeHtml(task.title)}</p>
+            ${st === 'done' && task.completed_by ? `<span class="text-[10px] text-emerald-400">أنجزها: ${escapeHtml(task.completed_by)}</span>` : ''}
+          </td>
+          <td class="py-3 px-4">${statusLabels[st]}</td>
+          <td class="py-3 px-4">${prioLabels[task.priority] || prioLabels.medium}</td>
+          <td class="py-3 px-4 text-zinc-300">${escapeHtml(task.assignee || '—')}</td>
+          <td class="py-3 px-4 font-mono ${overdue ? 'text-rose-400 font-bold' : 'text-zinc-400'}">${escapeHtml(task.due_date || '—')}</td>
+          <td class="py-3 px-4 text-zinc-400">${escapeHtml(task.category || '—')}</td>
+          <td class="py-3 px-4 text-left">
+            <button onclick="openTaskModal('${task.id}')" class="text-zinc-400 hover:text-white px-2">تعديل</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Drag & Drop
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('drag-over');
+    }
+    function handleDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+    async function handleDrop(e, newStatus) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      if (!draggedTaskId) return;
+      await updateTaskStatus(draggedTaskId, newStatus);
+    }
+
+    async function quickCycleStatus(taskId) {
+      const t = tasks.find(x => x.id === taskId);
+      if (!t) return;
+      const cur = getTaskStatus(t);
+      const next = cur === 'todo' ? 'in_progress' : cur === 'in_progress' ? 'done' : 'todo';
+      await updateTaskStatus(taskId, next);
+    }
+
+    async function updateTaskStatus(taskId, newStatus) {
+      const user = userNameInput.value.trim() || 'عضو';
+      const isDone = newStatus === 'done';
+      const target = tasks.find(t => t.id === taskId);
+      if (target) {
+        target.status = newStatus;
+        target.done = isDone;
+        target.completed_by = isDone ? user : '';
+        renderAll();
+      }
+
+      const payload = {
+        status: newStatus,
+        done: isDone,
+        completed_by: isDone ? user : '',
+        completed_at: isDone ? Date.now() : null
+      };
+
+      const { error } = await db.from('tasks').update(payload).eq('id', taskId);
+      if (error) {
+        // Fallback if 'status' column wasn't added yet
+        document.getElementById('schemaAlert').classList.remove('hidden');
+        await db.from('tasks').update({
+          done: isDone,
+          completed_by: isDone ? user : '',
+          completed_at: isDone ? Date.now() : null
+        }).eq('id', taskId);
+      } else if (isDone) {
+        showToast(`عاش يا ${user}! تم إنجاز المهمة ✅`);
+      }
+    }
+
+    // View Mode
+    function setViewMode(mode) {
+      viewMode = mode;
+      ['board', 'list'].forEach(m => {
+        const btn = document.getElementById(`viewBtn-${m}`);
+        btn.className = m === mode
+          ? 'px-2.5 py-1 rounded-lg text-xs font-bold transition bg-zinc-800 text-white'
+          : 'px-2.5 py-1 rounded-lg text-xs font-bold transition text-zinc-400 hover:text-white';
+      });
+      renderWorkspace();
+    }
+
+    // Task Modal
+    function openTaskModal(taskId = null, defaultStatus = 'todo') {
+      const modal = document.getElementById('taskModal');
+      const delBtn = document.getElementById('deleteTaskBtn');
+      if (taskId) {
+        const t = tasks.find(x => x.id === taskId);
+        if (!t) return;
+        document.getElementById('taskModalTitle').textContent = 'تعديل تفاصيل المهمة';
+        document.getElementById('editTaskId').value = t.id;
+        document.getElementById('fTaskTitle').value = t.title || '';
+        document.getElementById('fTaskNotes').value = t.notes || '';
+        document.getElementById('fTaskStatus').value = getTaskStatus(t);
+        document.getElementById('fTaskPriority').value = t.priority || 'medium';
+        document.getElementById('fTaskAssignee').value = t.assignee || '';
+        document.getElementById('fTaskCategory').value = t.category || '';
+        document.getElementById('fTaskDueDate').value = t.due_date || '';
+        delBtn.classList.remove('hidden');
+      } else {
+        document.getElementById('taskModalTitle').textContent = 'إضافة تاسك جديد';
+        document.getElementById('editTaskId').value = '';
+        document.getElementById('taskForm').reset();
+        document.getElementById('fTaskStatus').value = defaultStatus;
+        document.getElementById('fTaskPriority').value = 'medium';
+        delBtn.classList.add('hidden');
+      }
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeTaskModal() {
+      const modal = document.getElementById('taskModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function saveTask(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editTaskId').value;
+      const title = document.getElementById('fTaskTitle').value.trim();
+      const notes = document.getElementById('fTaskNotes').value.trim();
+      const status = document.getElementById('fTaskStatus').value;
+      const priority = document.getElementById('fTaskPriority').value;
+      const assignee = document.getElementById('fTaskAssignee').value.trim();
+      const category = document.getElementById('fTaskCategory').value.trim();
+      const due_date = document.getElementById('fTaskDueDate').value || null;
+      const user = userNameInput.value.trim() || 'عضو';
+      const isDone = status === 'done';
+
+      if (!title) return;
+      closeTaskModal();
+
+      if (editId) {
+        const updatePayload = {
+          title, notes, status, priority, assignee, category, due_date,
+          done: isDone,
+          completed_by: isDone ? user : '',
+          completed_at: isDone ? Date.now() : null
+        };
+        const { error } = await db.from('tasks').update(updatePayload).eq('id', editId);
+        if (error) {
+          document.getElementById('schemaAlert').classList.remove('hidden');
+          await db.from('tasks').update({
+            title, priority, assignee, category, done: isDone,
+            completed_by: isDone ? user : '', completed_at: isDone ? Date.now() : null
+          }).eq('id', editId);
+        }
+        showToast('تم تحديث المهمة بنجاح ✓');
+      } else {
+        const newTask = {
+          id: 'TSK-' + Date.now(),
+          project_id: activeProjectId,
+          title, notes, status, priority, assignee, category, due_date,
+          done: isDone,
+          completed_by: isDone ? user : '',
+          completed_at: isDone ? Date.now() : null,
+          created_by: user,
+          created_at: Date.now()
+        };
+        const { error } = await db.from('tasks').insert([newTask]);
+        if (error) {
+          document.getElementById('schemaAlert').classList.remove('hidden');
+          const { notes: _n, status: _s, due_date: _d, ...legacyTask } = newTask;
+          await db.from('tasks').insert([legacyTask]);
+        }
+        showToast('تمت إضافة المهمة بنجاح ⚡');
+      }
+      loadAllData();
+    }
+
+    async function deleteEditingTask() {
+      const id = document.getElementById('editTaskId').value;
+      if (!id || !confirm('حذف هذه المهمة نهائياً؟')) return;
+      closeTaskModal();
+      await db.from('tasks').delete().eq('id', id);
+      showToast('تم حذف المهمة');
+      loadAllData();
+    }
+
+    // Project Modal
+    function openProjectModal(isEdit = false) {
+      const modal = document.getElementById('projectModal');
+      const delBtn = document.getElementById('deleteProjBtn');
+      if (isEdit) {
+        const p = projects.find(x => x.id === activeProjectId);
+        if (!p) return;
+        document.getElementById('projectModalTitle').textContent = 'إعدادات المشروع';
+        document.getElementById('editProjectMode').value = 'edit';
+        document.getElementById('pName').value = p.name || '';
+        document.getElementById('pDesc').value = p.description || '';
+        document.getElementById('pIcon').value = p.icon || '🚀';
+        delBtn.classList.remove('hidden');
+      } else {
+        document.getElementById('projectModalTitle').textContent = 'إنشاء مشروع جديد';
+        document.getElementById('editProjectMode').value = 'create';
+        document.getElementById('pName').value = '';
+        document.getElementById('pDesc').value = '';
+        document.getElementById('pIcon').value = '🚀';
+        delBtn.classList.add('hidden');
+      }
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeProjectModal() {
+      const modal = document.getElementById('projectModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function saveProject() {
+      const mode = document.getElementById('editProjectMode').value;
+      const name = document.getElementById('pName').value.trim();
+      const description = document.getElementById('pDesc').value.trim();
+      const icon = document.getElementById('pIcon').value.trim() || '🚀';
+      if (!name) return showToast('اكتب اسم المشروع');
+
+      closeProjectModal();
+      if (mode === 'edit') {
+        await db.from('projects').update({ name, description, icon }).eq('id', activeProjectId);
+        showToast('تم تحديث بيانات المشروع');
+      } else {
+        const newId = 'PRJ-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        await db.from('projects').insert([{ id: newId, name, description, icon, created_at: Date.now() }]);
+        activeProjectId = newId;
+        window.history.replaceState({}, '', `?project=${newId}`);
+        showToast(`تم إنشاء مشروع "${name}" 🎉`);
+      }
+      loadAllData();
+    }
+
+    async function deleteCurrentProject() {
+      if (projects.length <= 1) return showToast('لا يمكن حذف المشروع الوحيد المتبقي');
+      if (!confirm('هل أنت متأكد من حذف هذا المشروع بكل مهامه؟')) return;
+      closeProjectModal();
+      await db.from('tasks').delete().eq('project_id', activeProjectId);
+      await db.from('projects').delete().eq('id', activeProjectId);
+      activeProjectId = null;
+      showToast('تم حذف المشروع');
+      loadAllData();
+    }
+
+    function joinProjectByCode() {
+      const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+      if (!code) return;
+      const found = projects.find(p => p.id.toUpperCase() === code);
+      if (found) {
+        activeProjectId = found.id;
+        window.history.replaceState({}, '', `?project=${found.id}`);
+        document.getElementById('joinCodeInput').value = '';
+        toggleMobileSidebar(false);
+        renderAll();
+        showToast(`تم فتح مشروع: ${found.name}`);
+      } else {
+        showToast('لم يتم العثور على مشروع بهذا الكود');
+      }
+    }
+
+    function copyProjectCode() {
+      if (!activeProjectId) return;
+      navigator.clipboard.writeText(activeProjectId);
+      showToast(`تم نسخ الكود: ${activeProjectId}`);
+    }
+
+    function shareCurrentProject() {
+      const shareUrl = `${window.location.origin}${window.location.pathname}?project=${activeProjectId}`;
+      navigator.clipboard.writeText(shareUrl);
+      showToast(`تم نسخ لينك المشروع (${activeProjectId})! ابعته لفريقك 🔗`);
+    }
+
+    // Boot
+    loadAllData();
+    subscribeRealtime();
+  </script>
+</body>
+</html>
