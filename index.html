@@ -111,12 +111,12 @@
     <div class="flex-1 overflow-y-auto p-3 space-y-1">
       <div class="px-2 py-1.5 flex items-center justify-between">
         <span class="text-[11px] font-bold text-zinc-500">المشاريع (Workspaces)</span>
-        <button onclick="openProjectModal()" title="مشروع جديد"
+        <button onclick="openProjectModal(null)" title="مشروع جديد"
           class="text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-0.5 rounded-md transition">
           + جديد
         </button>
       </div>
-      <div id="sidebarProjects" class="space-y-1">
+      <div id="sidebarProjects" class="space-y-1.5">
         <!-- Projects injected dynamically -->
       </div>
     </div>
@@ -144,30 +144,40 @@
 
     <!-- Top Utility Header -->
     <header class="h-16 border-b border-borderSubtle bg-obsidian/90 backdrop-blur-md px-4 lg:px-6 flex items-center justify-between gap-3 shrink-0">
-      <div class="flex items-center gap-3 min-w-0">
+      <div class="flex items-center gap-2.5 min-w-0">
         <button onclick="toggleMobileSidebar(true)" class="lg:hidden p-2 rounded-lg bg-surface border border-borderSubtle text-zinc-300">
           ☰
         </button>
         <div class="flex items-center gap-2 min-w-0">
           <span id="headerProjIcon" class="text-xl shrink-0">📂</span>
           <h1 id="headerProjTitle" class="font-extrabold text-base sm:text-lg text-white truncate">جاري التحميل...</h1>
+
+          <!-- Quick Project Status Selector -->
+          <select id="headerProjStatus" onchange="quickChangeProjectStatus(this.value)" title="تغيير حالة المشروع"
+            class="hidden text-[11px] font-bold px-2.5 py-1 rounded-lg border cursor-pointer focus:outline-none transition shrink-0">
+            <option value="todo" class="bg-zinc-900 text-zinc-200">⚪ قيد الانتظار (To Do)</option>
+            <option value="in_progress" class="bg-zinc-900 text-amber-300">🟡 جاري العمل (In Progress)</option>
+            <option value="done" class="bg-zinc-900 text-emerald-300">🟢 منتهي (Done)</option>
+            <option value="on_hold" class="bg-zinc-900 text-rose-300">⏸️ متوقف مؤقتاً</option>
+          </select>
+
           <button onclick="copyProjectCode()" id="headerProjCode" title="نسخ كود المشروع"
-            class="hidden sm:inline-flex items-center gap-1 text-[11px] font-mono bg-surface hover:bg-surfaceHover text-zinc-400 hover:text-emerald-400 px-2 py-0.5 rounded-md border border-borderSubtle transition shrink-0">
+            class="hidden xl:inline-flex items-center gap-1 text-[11px] font-mono bg-surface hover:bg-surfaceHover text-zinc-400 hover:text-emerald-400 px-2 py-0.5 rounded-md border border-borderSubtle transition shrink-0">
             ---
           </button>
         </div>
       </div>
 
       <!-- Search, Avatars & Actions (Hidden when no active project) -->
-      <div id="headerProjectActions" class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+      <div id="headerProjectActions" class="flex items-center gap-2 shrink-0">
         <!-- Mini Team Avatars Stack -->
         <button onclick="setViewMode('team')" title="عرض فريق المشروع" id="headerTeamStack"
-          class="hidden xl:flex items-center -space-x-2 space-x-reverse pl-2 hover:opacity-90 transition">
+          class="hidden 2xl:flex items-center -space-x-2 space-x-reverse pl-2 hover:opacity-90 transition">
         </button>
 
-        <div class="relative hidden md:block">
+        <div class="relative hidden lg:block">
           <input id="searchInput" type="text" oninput="renderWorkspace()" placeholder="بحث في المهام..."
-            class="bg-surface border border-borderSubtle rounded-xl pr-8 pl-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 w-44 lg:w-52 transition" />
+            class="bg-surface border border-borderSubtle rounded-xl pr-8 pl-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 w-40 xl:w-48 transition" />
           <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">🔍</span>
         </div>
 
@@ -188,9 +198,17 @@
           </button>
         </div>
 
-        <button onclick="openProjectModal(true)" title="إعدادات المشروع"
-          class="p-2 rounded-xl bg-surface hover:bg-surfaceHover border border-borderSubtle text-zinc-400 hover:text-white text-xs transition">
-          ⚙️
+        <!-- Edit Project Button -->
+        <button onclick="openProjectModal(activeProjectId)" title="تعديل اسم وحالة المشروع"
+          class="p-2 rounded-xl bg-surface hover:bg-surfaceHover border border-borderSubtle text-zinc-300 hover:text-white text-xs transition flex items-center gap-1">
+          <span>✏️</span>
+          <span class="hidden xl:inline font-bold">تعديل</span>
+        </button>
+
+        <!-- Delete Project Button -->
+        <button onclick="deleteProjectById(activeProjectId)" title="حذف المشروع"
+          class="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 text-xs transition">
+          🗑️
         </button>
 
         <button onclick="shareCurrentProject()"
@@ -213,8 +231,8 @@
       <!-- Schema Upgrade Alert -->
       <div id="schemaAlert" class="hidden bg-amber-950/40 border border-amber-500/30 rounded-2xl p-4 text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <p class="font-bold text-amber-400 text-sm">⚡ مطلوب تشغيل كود SQL لإنشاء جدول أعضاء الفريق (project_members)</p>
-          <p class="mt-0.5 text-amber-200/80">افتح SQL Editor في Supabase وشغّل كود التحديث عشان يتم حفظ قائمة الفريق تلقائياً عند مشاركة اللينك.</p>
+          <p class="font-bold text-amber-400 text-sm">⚡ تحديث بسيط في Supabase SQL Editor لحفظ حالة المشروع</p>
+          <p id="schemaAlertMsg" class="mt-0.5 text-amber-200/80">شغّل كود <code class="bg-obsidian px-1.5 py-0.5 rounded text-emerald-400">alter table public.projects add column if not exists status text default 'todo';</code> عشان تتحفظ حالة المشروع في الداتابيز.</p>
         </div>
         <button onclick="document.getElementById('schemaAlert').classList.add('hidden')" class="text-amber-400 hover:text-white font-bold shrink-0">إخفاء</button>
       </div>
@@ -232,7 +250,7 @@
             </p>
           </div>
           <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <button onclick="openProjectModal(false)"
+            <button onclick="openProjectModal(null)"
               class="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
               <span>+</span>
               <span>إنشاء أول مشروع</span>
@@ -248,6 +266,18 @@
 
       <!-- ACTIVE PROJECT WORKSPACE WRAPPER -->
       <div id="activeWorkspaceContent" class="space-y-5">
+        <!-- Completed Project Banner (Shows when project status === 'done') -->
+        <div id="projectDoneBanner" class="hidden bg-emerald-950/35 border border-emerald-500/30 rounded-2xl px-5 py-3.5 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 text-xs sm:text-sm text-emerald-300 font-bold">
+            <span>🎉</span>
+            <span>هذا المشروع تم تحديد حالته كـ "منتهي (Done)"!</span>
+          </div>
+          <button onclick="quickChangeProjectStatus('in_progress')"
+            class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition shrink-0">
+            إعادة فتح المشروع
+          </button>
+        </div>
+
         <!-- KPI Overview Row -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div class="bg-surface border border-borderSubtle rounded-2xl p-4">
@@ -400,7 +430,6 @@
   <!-- INTERACTIVE TUTORIAL MODAL (With Skip) -->
   <div id="tutorialModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-surface border border-borderSubtle rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl">
-      <!-- Top Progress & Skip -->
       <div class="px-6 py-4 border-b border-borderSubtle flex items-center justify-between">
         <div class="flex items-center gap-2">
           <span class="text-xs font-extrabold text-emerald-400">دليل البدء السريع</span>
@@ -412,12 +441,8 @@
         </button>
       </div>
 
-      <!-- Step Body -->
-      <div id="tutContent" class="p-6 space-y-4">
-        <!-- Injected dynamically by renderTutorialStep() -->
-      </div>
+      <div id="tutContent" class="p-6 space-y-4"></div>
 
-      <!-- Progress Dots & Nav -->
       <div class="px-6 py-4 border-t border-borderSubtle bg-obsidian/40 flex items-center justify-between gap-3">
         <div id="tutDots" class="flex items-center gap-1.5"></div>
         <div class="flex items-center gap-2">
@@ -434,7 +459,7 @@
     </div>
   </div>
 
-  <!-- AUTH / GUEST USERNAME MODAL (Discord / GitHub + Username-Only Guest Mode) -->
+  <!-- AUTH / GUEST USERNAME MODAL -->
   <div id="authModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-surface border border-borderSubtle rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
       <div class="px-6 py-4 border-b border-borderSubtle flex items-center justify-between">
@@ -446,7 +471,6 @@
       </div>
 
       <div class="p-6 space-y-4">
-        <!-- Guest Mode (Username Only - Featured & Fast) -->
         <form onsubmit="handleGuestSubmit(event)" class="bg-obsidian border border-borderSubtle rounded-2xl p-4 space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-xs font-extrabold text-emerald-400">⚡ وضع الزائر (Guest Mode)</span>
@@ -466,16 +490,13 @@
           <div class="relative flex justify-center text-[10px]"><span class="bg-surface px-2 text-zinc-500">أو التسجيل بحسابك</span></div>
         </div>
 
-        <!-- OAuth Providers -->
         <div class="space-y-2.5">
-          <!-- Discord -->
           <button onclick="signInWithProvider('discord')"
             class="w-full py-2.5 px-4 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold transition flex items-center justify-center gap-2.5 shadow-lg shadow-[#5865F2]/20">
             <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028z"/></svg>
             <span>المتابعة باستخدام Discord</span>
           </button>
 
-          <!-- GitHub -->
           <button onclick="signInWithProvider('github')"
             class="w-full py-2.5 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white text-xs font-bold transition flex items-center justify-center gap-2.5">
             <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
@@ -586,7 +607,7 @@
     </div>
   </div>
 
-  <!-- Project Create / Edit Modal -->
+  <!-- Project Create / Edit Modal (Name, Status, Desc, Icon, Delete) -->
   <div id="projectModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-surface border border-borderSubtle rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
       <div class="px-6 py-4 border-b border-borderSubtle flex items-center justify-between">
@@ -594,17 +615,29 @@
         <button onclick="closeProjectModal()" class="text-zinc-400 hover:text-white text-sm">✕</button>
       </div>
       <div class="p-6 space-y-4">
-        <input type="hidden" id="editProjectMode" value="create" />
+        <input type="hidden" id="editProjectId" value="" />
         <div>
           <label class="text-xs font-bold text-zinc-400 block mb-1.5">اسم المشروع *</label>
           <input id="pName" type="text" placeholder="مثال: مشروع التخرج / تطبيق الموبايل"
             class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500" />
         </div>
+
+        <div>
+          <label class="text-xs font-bold text-zinc-400 block mb-1.5">حالة المشروع</label>
+          <select id="pStatus" class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3.5 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-emerald-500">
+            <option value="todo">⚪ قيد الانتظار (To Do)</option>
+            <option value="in_progress" selected>🟡 جاري العمل (In Progress)</option>
+            <option value="done">🟢 منتهي (Done)</option>
+            <option value="on_hold">⏸️ متوقف مؤقتاً (On Hold)</option>
+          </select>
+        </div>
+
         <div>
           <label class="text-xs font-bold text-zinc-400 block mb-1.5">وصف المشروع</label>
           <input id="pDesc" type="text" placeholder="هدف المشروع والمهام الأساسية للفريق..."
             class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" />
         </div>
+
         <div>
           <label class="text-xs font-bold text-zinc-400 block mb-1.5">أيقونة المشروع</label>
           <div class="flex items-center gap-2">
@@ -618,8 +651,9 @@
             </div>
           </div>
         </div>
+
         <div class="flex items-center justify-between pt-3 border-t border-borderSubtle">
-          <button type="button" id="deleteProjBtn" onclick="deleteCurrentProject()"
+          <button type="button" id="deleteProjBtn" onclick="deleteEditingProject()"
             class="hidden px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold transition">
             🗑️ حذف المشروع
           </button>
@@ -650,14 +684,47 @@
     let currentUser = null;
     let tutorialStep = 0;
 
+    // Project Status Metadata
+    const PROJECT_STATUS_META = {
+      todo: {
+        label: 'قيد الانتظار',
+        dot: 'bg-zinc-400',
+        selectCls: 'bg-zinc-800/90 text-zinc-200 border-zinc-700 hover:border-zinc-500',
+        badgeCls: 'bg-zinc-800 text-zinc-400'
+      },
+      in_progress: {
+        label: 'جاري العمل',
+        dot: 'bg-amber-400',
+        selectCls: 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:border-amber-400',
+        badgeCls: 'bg-amber-500/15 text-amber-300'
+      },
+      done: {
+        label: 'منتهي',
+        dot: 'bg-emerald-400',
+        selectCls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:border-emerald-400',
+        badgeCls: 'bg-emerald-500/15 text-emerald-300'
+      },
+      on_hold: {
+        label: 'متوقف',
+        dot: 'bg-rose-400',
+        selectCls: 'bg-rose-500/10 text-rose-300 border-rose-500/30 hover:border-rose-400',
+        badgeCls: 'bg-rose-500/15 text-rose-300'
+      }
+    };
+
+    function getProjectStatus(p) {
+      if (p && p.status && PROJECT_STATUS_META[p.status]) return p.status;
+      return 'in_progress';
+    }
+
     // Tutorial Steps Definition
     const TUTORIAL_STEPS = [
       {
         icon: '🚀',
-        title: '1. أنشئ مشروعك الأول من الصفر',
-        desc: 'اضغط على زرار "+ جديد" في القائمة الجانبية (أو "إنشاء أول مشروع")، اختار اسم المشروع ووصفه وأيقونته، وهيتعملك مساحة عمل خاصة بيك فوراً.',
+        title: '1. أنشئ مشروعك الأول وتابع حالته',
+        desc: 'اضغط على "+ جديد" في القائمة الجانبية، اختار اسم المشروع وحالته (To Do / جاري العمل / منتهي) ووصفه. وتقدر تعدّل الاسم أو تغيّر الحالة أو تحذفه في أي وقت.',
         tips: [
-          'تقدر تنشئ عدد غير محدود من المشاريع وتتنقل بينهم بسهولة.',
+          'تقدر تغيّر حالة المشروع بضغطة واحدة من الشريط العلوي.',
           'كل مشروع ليه كود خاص (PRJ-XXXX) ولينك مشاركة مستقل.'
         ]
       },
@@ -761,21 +828,14 @@
         </div>
       `;
 
-      // Dots
       document.getElementById('tutDots').innerHTML = TUTORIAL_STEPS.map((_, idx) => `
         <span class="h-1.5 rounded-full transition-all ${idx === tutorialStep ? 'w-6 bg-emerald-400' : 'w-1.5 bg-zinc-700'}"></span>
       `).join('');
 
-      // Buttons
       const prevBtn = document.getElementById('tutPrevBtn');
       const nextBtn = document.getElementById('tutNextBtn');
       prevBtn.classList.toggle('hidden', tutorialStep === 0);
-
-      if (tutorialStep === TUTORIAL_STEPS.length - 1) {
-        nextBtn.textContent = 'ابدأ وأنشئ مشروعك الأول 🚀';
-      } else {
-        nextBtn.textContent = 'التالي ←';
-      }
+      nextBtn.textContent = tutorialStep === TUTORIAL_STEPS.length - 1 ? 'ابدأ وأنشئ مشروعك الأول 🚀' : 'التالي ←';
     }
 
     function prevTutorialStep() {
@@ -791,7 +851,7 @@
         renderTutorialStep();
       } else {
         skipTutorial();
-        openProjectModal(false);
+        openProjectModal(null);
       }
     }
 
@@ -925,13 +985,12 @@
 
     function maybeTriggerTutorial() {
       const urlP = new URLSearchParams(window.location.search).get('project');
-      if (urlP) return; // Teammates opening a shared link skip tutorial
+      if (urlP) return;
       if (!localStorage.getItem('enjaz_tutorial_done') && projects.length === 0) {
         openTutorialModal(0);
       }
     }
 
-    // Register current user in active project's team list
     async function registerCurrentUserInProject(role = 'Member') {
       if (!activeProjectId) return;
       const ident = getCurrentIdentity();
@@ -957,14 +1016,11 @@
       };
 
       const { error } = await db.from('project_members').upsert([payload]);
-      if (error) {
-        document.getElementById('schemaAlert').classList.remove('hidden');
-      } else {
+      if (!error) {
         loadMembersOnly();
       }
     }
 
-    // Sidebar Guest Name Input
     const userNameInput = document.getElementById('userNameInput');
     userNameInput.value = localStorage.getItem('enjaz_username') || '';
     let _nameDebounce = null;
@@ -977,7 +1033,6 @@
       _nameDebounce = setTimeout(() => registerCurrentUserInProject(), 800);
     });
 
-    // URL param check
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('project')) activeProjectId = urlParams.get('project');
 
@@ -992,7 +1047,6 @@
       }
     }
 
-    // Load Data (No default project auto-creation)
     async function loadAllData() {
       const syncDot = document.getElementById('syncDot');
       const syncText = document.getElementById('syncText');
@@ -1022,13 +1076,7 @@
           .from('project_members')
           .select('*')
           .order('joined_at', { ascending: true });
-        if (memErr) {
-          document.getElementById('schemaAlert').classList.remove('hidden');
-          members = [];
-        } else {
-          document.getElementById('schemaAlert').classList.add('hidden');
-          members = memData || [];
-        }
+        members = memErr ? [] : (memData || []);
 
         syncDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
         syncText.textContent = 'متصل لايف (Supabase)';
@@ -1071,23 +1119,17 @@
           const isActive = p.id === activeProjectId;
           const pTasks = tasks.filter(t => t.project_id === p.id);
           const doneCount = pTasks.filter(t => getTaskStatus(t) === 'done').length;
+          const pStatus = getProjectStatus(p);
+          const stMeta = PROJECT_STATUS_META[pStatus];
 
-          const btn = document.createElement('button');
-          btn.className = `w-full text-right px-3 py-2.5 rounded-xl flex items-center justify-between gap-2 transition ${
+          const row = document.createElement('div');
+          row.className = `group rounded-xl flex items-center justify-between gap-1.5 px-2.5 py-2 transition cursor-pointer border ${
             isActive
-              ? 'bg-emerald-500/10 text-white border border-emerald-500/30'
-              : 'text-zinc-400 hover:bg-surfaceHover hover:text-zinc-200 border border-transparent'
+              ? 'bg-emerald-500/10 text-white border-emerald-500/30'
+              : 'text-zinc-400 hover:bg-surfaceHover hover:text-zinc-200 border-transparent'
           }`;
-          btn.innerHTML = `
-            <div class="flex items-center gap-2.5 min-w-0">
-              <span class="text-base shrink-0">${escapeHtml(p.icon || '📁')}</span>
-              <span class="text-xs font-bold truncate">${escapeHtml(p.name)}</span>
-            </div>
-            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
-              isActive ? 'bg-emerald-500/20 text-emerald-300' : 'bg-zinc-800/80 text-zinc-500'
-            }">${doneCount}/${pTasks.length}</span>
-          `;
-          btn.onclick = () => {
+          row.onclick = (e) => {
+            if (e.target.closest('button')) return;
             activeProjectId = p.id;
             selectedAssignee = 'all';
             window.history.replaceState({}, '', `?project=${p.id}`);
@@ -1095,26 +1137,56 @@
             renderAll();
             registerCurrentUserInProject();
           };
-          container.appendChild(btn);
+
+          row.innerHTML = `
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              <span class="text-base shrink-0">${escapeHtml(p.icon || '📁')}</span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full shrink-0 ${stMeta.dot}" title="${stMeta.label}"></span>
+                  <span class="text-xs font-bold truncate ${pStatus === 'done' ? 'line-through text-zinc-400' : ''}">${escapeHtml(p.name)}</span>
+                </div>
+                <span class="text-[9px] text-zinc-500">${stMeta.label} • ${doneCount}/${pTasks.length} مهام</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-0.5 opacity-80 lg:opacity-0 group-hover:opacity-100 transition shrink-0">
+              <button onclick="openProjectModal('${p.id}')" title="تعديل المشروع"
+                class="p-1 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-white text-[11px]">✏️</button>
+              <button onclick="deleteProjectById('${p.id}')" title="حذف المشروع"
+                class="p-1 rounded-md hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 text-[11px]">🗑️</button>
+            </div>
+          `;
+          container.appendChild(row);
         });
       }
 
       const activeProj = projects.find(p => p.id === activeProjectId);
       const codeEl = document.getElementById('headerProjCode');
+      const statusEl = document.getElementById('headerProjStatus');
       const actionsEl = document.getElementById('headerProjectActions');
+      const doneBanner = document.getElementById('projectDoneBanner');
 
       if (activeProj) {
+        const st = getProjectStatus(activeProj);
+        const stMeta = PROJECT_STATUS_META[st];
         document.getElementById('headerProjIcon').textContent = activeProj.icon || '🚀';
         document.getElementById('headerProjTitle').textContent = activeProj.name;
+
+        statusEl.value = st;
+        statusEl.className = `text-[11px] font-bold px-2.5 py-1 rounded-lg border cursor-pointer focus:outline-none transition shrink-0 ${stMeta.selectCls}`;
+
         codeEl.textContent = activeProj.id;
         codeEl.classList.remove('hidden');
         actionsEl.classList.remove('hidden');
+        doneBanner.classList.toggle('hidden', st !== 'done');
         document.getElementById('projDescLine').textContent = activeProj.description || 'لا يوجد وصف للمشروع';
       } else {
         document.getElementById('headerProjIcon').textContent = '📂';
         document.getElementById('headerProjTitle').textContent = 'مساحة العمل';
+        statusEl.className = 'hidden';
         codeEl.classList.add('hidden');
         actionsEl.classList.add('hidden');
+        doneBanner.classList.add('hidden');
       }
     }
 
@@ -1344,8 +1416,7 @@
       };
       const { error } = await db.from('project_members').insert([payload]);
       if (error) {
-        document.getElementById('schemaAlert').classList.remove('hidden');
-        showToast('شغّل كود SQL الخاص بجدول project_members أولاً');
+        showToast('تأكد من وجود جدول project_members في Supabase');
       } else {
         showToast(`تمت إضافة ${name} للفريق ✓`);
         loadMembersOnly();
@@ -1657,29 +1728,49 @@
       loadAllData();
     }
 
-    // Project Modal
-    function openProjectModal(isEdit = false) {
+    // Project Create / Edit / Status / Delete
+    async function quickChangeProjectStatus(newStatus) {
+      if (!activeProjectId) return;
+      const p = projects.find(x => x.id === activeProjectId);
+      if (p) {
+        p.status = newStatus;
+        renderAll();
+      }
+      const { error } = await db.from('projects').update({ status: newStatus }).eq('id', activeProjectId);
+      if (error) {
+        document.getElementById('schemaAlert').classList.remove('hidden');
+        showToast('شغّل كود SQL لإضافة عمود status لجدول المشاريع');
+      } else {
+        const lbl = PROJECT_STATUS_META[newStatus]?.label || newStatus;
+        showToast(`تم تغيير حالة المشروع إلى: ${lbl}`);
+      }
+    }
+
+    function openProjectModal(projectIdToEdit = null) {
       const modal = document.getElementById('projectModal');
       const delBtn = document.getElementById('deleteProjBtn');
-      if (isEdit) {
-        const p = projects.find(x => x.id === activeProjectId);
+      if (projectIdToEdit) {
+        const p = projects.find(x => x.id === projectIdToEdit);
         if (!p) return;
-        document.getElementById('projectModalTitle').textContent = 'إعدادات المشروع';
-        document.getElementById('editProjectMode').value = 'edit';
+        document.getElementById('projectModalTitle').textContent = 'تعديل المشروع';
+        document.getElementById('editProjectId').value = p.id;
         document.getElementById('pName').value = p.name || '';
+        document.getElementById('pStatus').value = getProjectStatus(p);
         document.getElementById('pDesc').value = p.description || '';
         document.getElementById('pIcon').value = p.icon || '🚀';
         delBtn.classList.remove('hidden');
       } else {
         document.getElementById('projectModalTitle').textContent = 'إنشاء مشروع جديد';
-        document.getElementById('editProjectMode').value = 'create';
+        document.getElementById('editProjectId').value = '';
         document.getElementById('pName').value = '';
+        document.getElementById('pStatus').value = 'in_progress';
         document.getElementById('pDesc').value = '';
         document.getElementById('pIcon').value = '🚀';
         delBtn.classList.add('hidden');
       }
       modal.classList.remove('hidden');
       modal.classList.add('flex');
+      setTimeout(() => document.getElementById('pName').focus(), 50);
     }
 
     function closeProjectModal() {
@@ -1689,19 +1780,28 @@
     }
 
     async function saveProject() {
-      const mode = document.getElementById('editProjectMode').value;
+      const editId = document.getElementById('editProjectId').value;
       const name = document.getElementById('pName').value.trim();
+      const status = document.getElementById('pStatus').value;
       const description = document.getElementById('pDesc').value.trim();
       const icon = document.getElementById('pIcon').value.trim() || '🚀';
       if (!name) return showToast('اكتب اسم المشروع');
 
       closeProjectModal();
-      if (mode === 'edit') {
-        await db.from('projects').update({ name, description, icon }).eq('id', activeProjectId);
-        showToast('تم تحديث بيانات المشروع');
+      if (editId) {
+        const { error } = await db.from('projects').update({ name, status, description, icon }).eq('id', editId);
+        if (error) {
+          document.getElementById('schemaAlert').classList.remove('hidden');
+          await db.from('projects').update({ name, description, icon }).eq('id', editId);
+        }
+        showToast('تم تحديث بيانات المشروع ✓');
       } else {
         const newId = 'PRJ-' + Math.random().toString(36).substring(2, 6).toUpperCase();
-        await db.from('projects').insert([{ id: newId, name, description, icon, created_at: Date.now() }]);
+        const { error } = await db.from('projects').insert([{ id: newId, name, status, description, icon, created_at: Date.now() }]);
+        if (error) {
+          document.getElementById('schemaAlert').classList.remove('hidden');
+          await db.from('projects').insert([{ id: newId, name, description, icon, created_at: Date.now() }]);
+        }
         activeProjectId = newId;
         window.history.replaceState({}, '', `?project=${newId}`);
         await registerCurrentUserInProject('Owner');
@@ -1710,15 +1810,27 @@
       loadAllData();
     }
 
-    async function deleteCurrentProject() {
-      if (!activeProjectId) return;
-      if (!confirm('هل أنت متأكد من حذف هذا المشروع بكل مهامه وأعضائه؟')) return;
+    async function deleteEditingProject() {
+      const id = document.getElementById('editProjectId').value;
+      if (!id) return;
       closeProjectModal();
-      await db.from('tasks').delete().eq('project_id', activeProjectId);
-      await db.from('project_members').delete().eq('project_id', activeProjectId);
-      await db.from('projects').delete().eq('id', activeProjectId);
-      activeProjectId = null;
-      window.history.replaceState({}, '', window.location.pathname);
+      await deleteProjectById(id);
+    }
+
+    async function deleteProjectById(projId) {
+      if (!projId) return;
+      const p = projects.find(x => x.id === projId);
+      const label = p ? `"${p.name}"` : 'هذا المشروع';
+      if (!confirm(`هل أنت متأكد من حذف مشروع ${label} بكل مهامه وأعضائه نهائياً؟`)) return;
+
+      await db.from('tasks').delete().eq('project_id', projId);
+      await db.from('project_members').delete().eq('project_id', projId);
+      await db.from('projects').delete().eq('id', projId);
+
+      if (activeProjectId === projId) {
+        activeProjectId = null;
+        window.history.replaceState({}, '', window.location.pathname);
+      }
       showToast('تم حذف المشروع');
       loadAllData();
     }
@@ -1770,7 +1882,6 @@
       await loadAllData();
       subscribeRealtime();
 
-      // If visitor has no account & no saved guest username, prompt username-only guest / OAuth modal
       if (!hasIdentity()) {
         openAuthModal(true);
       } else {
