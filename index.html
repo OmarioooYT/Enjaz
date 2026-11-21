@@ -1612,12 +1612,37 @@
       return Boolean(currentUser || (localStorage.getItem('enjaz_username') || '').trim());
     }
 
+    function resolveActiveOAuthProvider(user) {
+      if (!user) return 'guest';
+      const identities = Array.isArray(user.identities) ? user.identities : [];
+      const linkedProviders = new Set([
+        ...(Array.isArray(user.app_metadata?.providers) ? user.app_metadata.providers : []),
+        ...identities.map(i => i.provider).filter(Boolean)
+      ]);
+      const chosen = localStorage.getItem('enjaz_last_oauth_provider');
+      if (chosen && (linkedProviders.size === 0 || linkedProviders.has(chosen))) {
+        return chosen;
+      }
+      if (identities.length > 0) {
+        const latest = [...identities].sort((a, b) => {
+          const ta = Date.parse(a.last_sign_in_at || a.updated_at || a.created_at || 0) || 0;
+          const tb = Date.parse(b.last_sign_in_at || b.updated_at || b.created_at || 0) || 0;
+          return tb - ta;
+        })[0];
+        if (latest && latest.provider) return latest.provider;
+      }
+      return (user.app_metadata && user.app_metadata.provider) || 'oauth';
+    }
+
     function getCurrentIdentity() {
       if (currentUser) {
+        const provider = resolveActiveOAuthProvider(currentUser);
+        const identities = Array.isArray(currentUser.identities) ? currentUser.identities : [];
+        const activeIdent = identities.find(i => i.provider === provider);
+        const idData = (activeIdent && activeIdent.identity_data) || {};
         const meta = currentUser.user_metadata || {};
-        const name = meta.full_name || meta.name || meta.user_name || meta.preferred_username || (currentUser.email ? currentUser.email.split('@')[0] : 'عضو');
-        const avatar = meta.avatar_url || meta.picture || '';
-        const provider = (currentUser.app_metadata && currentUser.app_metadata.provider) || 'oauth';
+        const name = idData.full_name || idData.name || meta.full_name || meta.name || idData.user_name || meta.user_name || meta.preferred_username || (currentUser.email ? currentUser.email.split('@')[0] : 'عضو');
+        const avatar = idData.avatar_url || idData.picture || meta.avatar_url || meta.picture || '';
         return {
           id: currentUser.id,
           name,
@@ -1714,6 +1739,7 @@
         showToast('ارفع الموقع على GitHub Pages أو Netlify أو شغّله على localhost عشان OAuth يشتغل');
         return;
       }
+      localStorage.setItem('enjaz_last_oauth_provider', provider);
       const redirectUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
       const options = { redirectTo: redirectUrl };
       if (provider === 'google') {
@@ -1724,12 +1750,14 @@
         options
       });
       if (error) {
+        localStorage.removeItem('enjaz_last_oauth_provider');
         console.error(error);
         showToast(`تأكد من تفعيل ${provider} في Supabase Authentication`);
       }
     }
 
     async function signOutUser() {
+      localStorage.removeItem('enjaz_last_oauth_provider');
       await db.auth.signOut();
       currentUser = null;
       renderAuthUI();
