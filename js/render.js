@@ -100,18 +100,20 @@ function renderSidebar() {
     mobileStatusEl.value = st;
     mobileStatusEl.className = `text-[11px] font-bold px-2 py-1.5 rounded-xl border focus:outline-none shrink-0 ${stMeta.selectCls}`;
 
-    codeEl.textContent = activeProj.id;
-    codeEl.classList.remove('hidden');
+    if (codeEl) {
+      codeEl.textContent = activeProj.id;
+      codeEl.classList.remove('hidden');
+    }
     actionsEl.classList.remove('hidden');
     mobileSubEl.classList.remove('hidden');
-    delProjHeaderBtn.classList.toggle('hidden', isSharedMode);
+    if (delProjHeaderBtn) delProjHeaderBtn.classList.toggle('hidden', isSharedMode);
     doneBanner.classList.toggle('hidden', st !== 'done');
     document.getElementById('projDescLine').textContent = activeProj.description || t('noProjDesc');
   } else {
     document.getElementById('headerProjIcon').innerHTML = renderProjectIconHtml('svg:folder', 'w-4 h-4');
     document.getElementById('headerProjTitle').textContent = t('workspace');
     statusEl.className = 'hidden';
-    codeEl.classList.add('hidden');
+    if (codeEl) codeEl.classList.add('hidden');
     actionsEl.classList.add('hidden');
     mobileSubEl.classList.add('hidden');
     doneBanner.classList.add('hidden');
@@ -148,23 +150,25 @@ function renderWorkspace() {
   projTasks.forEach(t => { if (t.assignee) uniqueNames.add(t.assignee.trim()); });
   dl.innerHTML = Array.from(uniqueNames).map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
 
-  // Header mini avatars stack
+  // Header mini avatars stack (optional)
   const stack = document.getElementById('headerTeamStack');
-  stack.innerHTML = '';
-  projMembers.slice(0, 4).forEach(m => {
-    const av = document.createElement('div');
-    av.className = 'w-7 h-7 rounded-full border-2 border-obsidian bg-zinc-800 text-[10px] font-bold text-zinc-200 flex items-center justify-center overflow-hidden';
-    av.title = m.name;
-    av.innerHTML = m.avatar_url
-      ? `<img src="${escapeHtml(m.avatar_url)}" class="w-full h-full object-cover" />`
-      : escapeHtml((m.name || '؟').charAt(0).toUpperCase());
-    stack.appendChild(av);
-  });
-  if (projMembers.length > 4) {
-    const more = document.createElement('div');
-    more.className = 'w-7 h-7 rounded-full border-2 border-obsidian bg-brand/30 text-[10px] font-bold text-brand flex items-center justify-center';
-    more.textContent = `+${projMembers.length - 4}`;
-    stack.appendChild(more);
+  if (stack) {
+    stack.innerHTML = '';
+    projMembers.slice(0, 4).forEach(m => {
+      const av = document.createElement('div');
+      av.className = 'w-7 h-7 rounded-full border-2 border-obsidian bg-zinc-800 text-[10px] font-bold text-zinc-200 flex items-center justify-center overflow-hidden';
+      av.title = m.name;
+      av.innerHTML = m.avatar_url
+        ? `<img src="${escapeHtml(m.avatar_url)}" class="w-full h-full object-cover" />`
+        : escapeHtml((m.name || '؟').charAt(0).toUpperCase());
+      stack.appendChild(av);
+    });
+    if (projMembers.length > 4) {
+      const more = document.createElement('div');
+      more.className = 'w-7 h-7 rounded-full border-2 border-obsidian bg-brand/30 text-[10px] font-bold text-brand flex items-center justify-center';
+      more.textContent = `+${projMembers.length - 4}`;
+      stack.appendChild(more);
+    }
   }
 
   // KPIs with smooth count-up interpolation & one-shot progress sweep
