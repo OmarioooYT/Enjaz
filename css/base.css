@@ -1,0 +1,178 @@
+:root {
+  color-scheme: dark;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --dur-fast: 150ms;
+  --dur-base: 240ms;
+  --dur-slow: 360ms;
+}
+
+body {
+  background-color: #07070A;
+  background-image:
+    radial-gradient(ellipse 65% 45% at 15% -10%, rgba(252, 106, 13, 0.09), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 0%, rgba(99, 102, 241, 0.05), transparent 65%);
+  color: #F4F4F6;
+  font-family: 'IBM Plex Sans Arabic', 'Cairo', 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+html[lang="en"] body {
+  font-family: 'Inter', 'IBM Plex Sans Arabic', sans-serif;
+}
+
+/* RTL / LTR Sidebar positioning & slide */
+html[dir="rtl"] #sidebar {
+  right: 0;
+  left: auto;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 0;
+}
+
+html[dir="ltr"] #sidebar {
+  left: 0;
+  right: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 0;
+}
+
+html[dir="rtl"] #sidebar.sidebar-closed {
+  transform: translateX(100%);
+}
+
+html[dir="ltr"] #sidebar.sidebar-closed {
+  transform: translateX(-100%);
+}
+
+@media (min-width: 1024px) {
+  html #sidebar.sidebar-closed {
+    transform: translateX(0) !important;
+  }
+}
+
+/* Crisp keyboard focus states */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(252, 106, 13, 0.75);
+  outline-offset: 2px;
+}
+
+button,
+select,
+[role="button"] {
+  cursor: pointer;
+}
+
+/* Subtle dark scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(252, 106, 13, 0.7);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Elevated surfaces & cards */
+.card-surface {
+  background: linear-gradient(180deg, rgba(22, 22, 30, 0.85) 0%, rgba(14, 14, 19, 0.92) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 20px -8px rgba(0, 0, 0, 0.55);
+  transition: transform var(--dur-base) var(--ease-out-expo), border-color var(--dur-base) ease, box-shadow var(--dur-base) ease;
+}
+
+.spotlight-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.spotlight-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), rgba(252, 106, 13, 0.13), transparent 72%);
+  transition: opacity 0.28s ease;
+}
+
+.spotlight-card:hover::before {
+  opacity: 1;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(252, 106, 13, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 28px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(252, 106, 13, 0.12);
+}
+
+.btn-primary-gradient {
+  background: linear-gradient(135deg, #FC6A0D 0%, #FF842D 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 6px 18px -4px rgba(252, 106, 13, 0.42);
+  transition: transform var(--dur-fast) var(--ease-out-expo), box-shadow var(--dur-base) ease, filter var(--dur-base) ease;
+}
+
+.btn-primary-gradient:hover {
+  background: linear-gradient(135deg, #FF7A24 0%, #FF9347 100%);
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 10px 24px -4px rgba(252, 106, 13, 0.55);
+}
+
+.btn-primary-gradient:active {
+  transform: scale(0.97);
+}
+
+/* Kanban drag & card interactions */
+.kanban-col {
+  transition: background-color var(--dur-base) ease, border-color var(--dur-base) ease, box-shadow var(--dur-base) ease;
+}
+
+.kanban-col.drag-over {
+  background-color: rgba(252, 106, 13, 0.07);
+  border-color: rgba(252, 106, 13, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(252, 106, 13, 0.3), 0 0 24px -8px rgba(252, 106, 13, 0.25);
+}
+
+.task-card {
+  background: linear-gradient(180deg, #13131A 0%, #0F0F15 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 8px -2px rgba(0, 0, 0, 0.5);
+  transition: transform var(--dur-base) var(--ease-out-expo), border-color var(--dur-base) ease, box-shadow var(--dur-base) ease, background-color var(--dur-base) ease;
+}
+
+.task-card:hover {
+  border-color: rgba(252, 106, 13, 0.42);
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 28px -10px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(252, 106, 13, 0.14);
+}
+
+.task-card.dragging {
+  opacity: 0.45;
+  transform: scale(0.97) rotate(-0.8deg);
+}

@@ -1,0 +1,235 @@
+/* One-shot progress sweep triggered on progress gain */
+@keyframes progressSweep {
+  0% {
+    transform: translateX(100%);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+.progress-bar-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-wrap.sweep-once::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.48), transparent);
+  animation: progressSweep 0.75s var(--ease-out-expo) forwards;
+}
+
+/* Entrance, Exit & Micro-interaction Keyframes (Asymmetric timing: exits faster than enters) */
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes backdropOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+}
+
+@keyframes sheetUp {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheetDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeSlideRtl {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes viewEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes donePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+    transform: scale(0.985);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    transform: scale(1.01);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    transform: scale(1);
+  }
+}
+
+.animate-backdrop-in {
+  animation: backdropIn 200ms ease-out forwards;
+}
+
+.animate-backdrop-out {
+  animation: backdropOut 150ms var(--ease-exit) forwards;
+}
+
+.animate-modal-in {
+  animation: modalIn var(--dur-base) var(--ease-out-expo) forwards;
+}
+
+.animate-modal-out {
+  animation: modalOut var(--dur-fast) var(--ease-exit) forwards;
+}
+
+.animate-sheet-up {
+  animation: sheetUp 280ms var(--ease-out-expo) forwards;
+}
+
+.animate-sheet-down {
+  animation: sheetDown 170ms var(--ease-exit) forwards;
+}
+
+.animate-toast-in {
+  animation: toastIn 260ms var(--ease-spring) forwards;
+}
+
+.animate-toast-out {
+  animation: toastOut 160ms var(--ease-exit) forwards;
+}
+
+.animate-fade-up {
+  animation: fadeSlideUp 280ms var(--ease-out-expo) both;
+}
+
+.animate-slide-rtl {
+  animation: fadeSlideRtl 240ms var(--ease-out-expo) both;
+}
+
+.animate-pop-in {
+  animation: popIn 240ms var(--ease-spring) both;
+}
+
+.animate-view-enter {
+  animation: viewEnter 220ms var(--ease-out-expo) both;
+}
+
+.animate-done-pulse {
+  animation: donePulse 520ms var(--ease-out-expo) forwards;
+}
