@@ -857,11 +857,25 @@
 
     <!-- Account / Auth Card -->
     <div class="p-3.5 lg:p-4 border-b border-borderSubtle space-y-2.5 shrink-0">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between gap-2">
         <span data-i18n="currentAccount" class="text-[11px] font-semibold tracking-wide text-zinc-400">حسابك
           الحالي</span>
-        <span id="authProviderBadge"
-          class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white/[0.06] text-zinc-300 border border-white/[0.06]">زائر</span>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="openEditProfileModal()" data-i18n-title="editProfileBtn"
+            title="تعديل ملفي الشخصي" aria-label="Edit my profile"
+            class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-brand/12 hover:bg-brand/22 text-orange-200 hover:text-white border border-brand/30 transition inline-flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+              aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+            <span data-i18n="editBtn">تعديل</span>
+          </button>
+          <span id="authProviderBadge"
+            class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white/[0.06] text-zinc-300 border border-white/[0.06]">زائر</span>
+        </div>
       </div>
 
       <div
@@ -2185,6 +2199,98 @@
     </div>
   </aside>
 
+  <!-- Edit Own Profile Modal -->
+  <div id="editProfileModal" role="dialog" aria-modal="true" aria-labelledby="editProfileHeading"
+    onclick="if(event.target===this) closeEditProfileModal()"
+    class="fixed inset-0 bg-black/75 backdrop-blur-md hidden items-center justify-center z-50 p-3 sm:p-4">
+    <div
+      class="animate-modal-in bg-[#111117] border border-white/[0.1] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
+      <div class="px-5 sm:px-6 py-4 border-b border-borderSubtle flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="w-8 h-8 rounded-xl bg-brand/15 border border-brand/30 text-brand flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+              aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <div>
+            <h2 id="editProfileHeading" data-i18n="editProfileTitle"
+              class="font-display font-extrabold text-sm text-white">تعديل ملفي الشخصي</h2>
+            <p data-i18n="editProfileSubtitle" class="text-[10px] text-zinc-400">يمكنك تعديل بيانات ملفك الشخصي فقط</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeEditProfileModal()" aria-label="Close"
+          class="w-8 h-8 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-white flex items-center justify-center transition">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+            aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form onsubmit="saveOwnProfile(event)" class="p-5 sm:p-6 space-y-4">
+        <input type="hidden" id="profileAvatarData" value="" />
+        <input type="file" id="profileAvatarFile" accept="image/png,image/jpeg,image/webp" class="hidden"
+          onchange="handleProfileAvatarUpload(event)" />
+
+        <!-- Avatar Preview & Upload -->
+        <div class="flex items-center gap-3.5 p-3 rounded-2xl bg-obsidian/90 border border-borderSubtle">
+          <div id="profileAvatarPreview"
+            class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand/25 to-brand/10 border border-brand/35 text-brand flex items-center justify-center text-lg font-extrabold shrink-0 overflow-hidden shadow-inner">
+            ؟
+          </div>
+          <div class="flex-1 min-w-0 space-y-1.5">
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" onclick="document.getElementById('profileAvatarFile').click()"
+                class="px-3 py-1.5 rounded-lg bg-brand/15 hover:bg-brand/25 border border-brand/30 text-orange-200 hover:text-white text-[11px] font-semibold transition inline-flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                  aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                </svg>
+                <span data-i18n="uploadAvatarBtn">تغيير الصورة</span>
+              </button>
+              <button type="button" id="removeProfileAvatarBtn" onclick="clearProfileAvatar()"
+                data-i18n="removeAvatarBtn"
+                class="hidden px-2.5 py-1.5 rounded-lg bg-rose-500/12 hover:bg-rose-500/20 border border-rose-500/25 text-rose-400 text-[11px] font-semibold transition">
+                إزالة الصورة
+              </button>
+            </div>
+            <p data-i18n="uploadAvatarHint" class="text-[10px] text-zinc-400">صورة شخصية (PNG / JPG / WebP)</p>
+          </div>
+        </div>
+
+        <!-- Display Name -->
+        <div>
+          <label for="profileNameInput" data-i18n="profileNameLabel"
+            class="text-xs font-semibold text-zinc-300 block mb-1.5">الاسم المعروض</label>
+          <input id="profileNameInput" type="text" required maxlength="60"
+            data-i18n-placeholder="enterUsername" placeholder="اكتب اسمك..."
+            class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand transition" />
+        </div>
+
+        <!-- Role / Title -->
+        <div>
+          <label for="profileRoleInput" data-i18n="profileRoleLabel"
+            class="text-xs font-semibold text-zinc-300 block mb-1.5">الدور / التخصص في الفريق</label>
+          <input id="profileRoleInput" type="text" maxlength="40"
+            data-i18n-placeholder="profileRolePlaceholder" placeholder="مثال: Frontend Developer, Designer, Member..."
+            class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand transition" />
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-borderSubtle">
+          <button type="button" onclick="closeEditProfileModal()" data-i18n="cancelBtn"
+            class="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-zinc-200 text-xs font-semibold transition">إلغاء</button>
+          <button type="submit" id="saveProfileBtn" data-i18n="saveBtn"
+            class="btn-primary-gradient px-5 py-2 rounded-xl text-white text-xs font-bold transition">حفظ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Custom Confirmation Dialog -->
   <div id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="confirmModalTitle"
     aria-describedby="confirmModalMessage" onclick="if(event.target===this) resolveConfirmDialog(false)"
@@ -2402,6 +2508,16 @@
         removeMemberTitle: 'إزالة من الفريق',
         langSwitchedToast: 'تم التبديل إلى العربية',
         aiBtn: 'مساعد AI',
+        editProfileBtn: 'تعديل ملفي الشخصي',
+        editProfileTitle: 'تعديل ملفي الشخصي',
+        editProfileSubtitle: 'يمكنك تعديل بيانات ملفك الشخصي فقط',
+        uploadAvatarBtn: 'تغيير الصورة',
+        removeAvatarBtn: 'إزالة الصورة',
+        uploadAvatarHint: 'صورة شخصية (PNG / JPG / WebP)',
+        profileNameLabel: 'الاسم المعروض',
+        profileRoleLabel: 'الدور / التخصص في الفريق',
+        profileRolePlaceholder: 'مثال: Frontend, Designer, Manager...',
+        profileSavedToast: 'تم تحديث ملفك الشخصي ✓',
         aiBtnTitle: 'مساعد الذكاء الاصطناعي وتقسيم المهام (Puter AI)',
         askAiTaskBtn: 'اسأل AI / قسّمها',
         aiDrawerTitle: 'مساعد إنجاز الذكي',
@@ -2599,6 +2715,16 @@
         removeMemberTitle: 'Remove from team',
         langSwitchedToast: 'Switched to English',
         aiBtn: 'AI Assistant',
+        editProfileBtn: 'Edit my profile',
+        editProfileTitle: 'Edit My Profile',
+        editProfileSubtitle: 'You can only edit your own profile details',
+        uploadAvatarBtn: 'Change photo',
+        removeAvatarBtn: 'Remove photo',
+        uploadAvatarHint: 'Profile photo (PNG / JPG / WebP)',
+        profileNameLabel: 'Display Name',
+        profileRoleLabel: 'Team Role / Title',
+        profileRolePlaceholder: 'e.g. Frontend, Designer, Manager...',
+        profileSavedToast: 'Profile updated ✓',
         aiBtnTitle: 'AI Assistant & Task Divider (Puter AI)',
         askAiTaskBtn: 'Ask AI / Divide',
         aiDrawerTitle: 'Enjaz AI Assistant',
@@ -3346,6 +3472,25 @@
       return (user.app_metadata && user.app_metadata.provider) || 'oauth';
     }
 
+    function getSavedProfileOverride(userId) {
+      if (!userId) return {};
+      try {
+        const raw = JSON.parse(localStorage.getItem(`enjaz_profile_${userId}`) || '{}');
+        return raw && typeof raw === 'object' ? raw : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveProfileOverride(userId, data) {
+      if (!userId) return;
+      try {
+        localStorage.setItem(`enjaz_profile_${userId}`, JSON.stringify(data || {}));
+      } catch {
+        // Ignore storage quota errors
+      }
+    }
+
     function getCurrentIdentity() {
       if (currentUser) {
         const provider = resolveActiveOAuthProvider(currentUser);
@@ -3353,13 +3498,20 @@
         const activeIdent = identities.find(i => i.provider === provider);
         const idData = (activeIdent && activeIdent.identity_data) || {};
         const meta = currentUser.user_metadata || {};
-        const name = idData.full_name || idData.name || meta.full_name || meta.name || idData.user_name || meta.user_name || meta.preferred_username || (currentUser.email ? currentUser.email.split('@')[0] : 'عضو');
-        const avatar = idData.avatar_url || idData.picture || meta.avatar_url || meta.picture || '';
+        const localProf = getSavedProfileOverride(currentUser.id);
+        const defaultName = idData.full_name || idData.name || meta.full_name || meta.name || idData.user_name || meta.user_name || meta.preferred_username || (currentUser.email ? currentUser.email.split('@')[0] : 'عضو');
+        const defaultAvatar = idData.avatar_url || idData.picture || meta.avatar_url || meta.picture || '';
+        const name = (localProf.name || meta.custom_name || defaultName || '').trim();
+        const avatar = localProf.avatar_cleared
+          ? ''
+          : (localProf.avatar_url !== undefined ? localProf.avatar_url : (meta.custom_avatar_url !== undefined ? meta.custom_avatar_url : defaultAvatar));
+        const role = (localProf.role || meta.custom_role || '').trim();
         return {
           id: currentUser.id,
           name,
           email: currentUser.email || '',
           avatar_url: avatar,
+          role,
           provider
         };
       }
@@ -3368,12 +3520,14 @@
         guestId = 'guest_' + Math.random().toString(36).substring(2, 10);
         localStorage.setItem('enjaz_guest_id', guestId);
       }
-      const name = (document.getElementById('userNameInput').value || localStorage.getItem('enjaz_username') || '').trim();
+      const localProf = getSavedProfileOverride(guestId);
+      const name = (localProf.name || document.getElementById('userNameInput').value || localStorage.getItem('enjaz_username') || '').trim();
       return {
         id: guestId,
         name,
         email: '',
-        avatar_url: '',
+        avatar_url: localProf.avatar_cleared ? '' : (localProf.avatar_url || ''),
+        role: (localProf.role || '').trim(),
         provider: 'guest'
       };
     }
@@ -3494,7 +3648,8 @@
       const memberId = `${activeProjectId}_${ident.id}`;
       const existing = members.find(m => m.id === memberId);
 
-      if (existing && existing.name === ident.name && existing.avatar_url === ident.avatar_url && existing.provider === ident.provider) {
+      const desiredRole = ident.role || (existing ? existing.role : role);
+      if (existing && existing.name === ident.name && existing.avatar_url === ident.avatar_url && existing.role === desiredRole && existing.provider === ident.provider) {
         return;
       }
 
@@ -3506,13 +3661,155 @@
         email: ident.email,
         avatar_url: ident.avatar_url,
         provider: ident.provider,
-        role: existing ? existing.role : role,
+        role: desiredRole,
         joined_at: existing ? existing.joined_at : Date.now()
       };
 
       const { error } = await db.from('project_members').upsert([payload]);
       if (!error) {
         loadMembersOnly();
+      }
+    }
+
+    function updateProfileAvatarPreview(avatarUrl, nameStr) {
+      const prev = document.getElementById('profileAvatarPreview');
+      const removeBtn = document.getElementById('removeProfileAvatarBtn');
+      if (!prev) return;
+      if (avatarUrl) {
+        prev.innerHTML = `<img src="${escapeHtml(avatarUrl)}" class="w-full h-full object-cover" alt="Profile avatar" />`;
+        if (removeBtn) removeBtn.classList.remove('hidden');
+      } else {
+        prev.textContent = (nameStr || '؟').charAt(0).toUpperCase();
+        if (removeBtn) removeBtn.classList.add('hidden');
+      }
+    }
+
+    function openEditProfileModal(targetUserId = null) {
+      const ident = getCurrentIdentity();
+      // Strictly enforce: a user can ONLY edit their own profile
+      if (targetUserId && targetUserId !== ident.id) {
+        showToast(currentLang === 'en' ? 'You can only edit your own profile' : 'يمكنك تعديل ملفك الشخصي فقط');
+        return;
+      }
+
+      const myMember = members.find(m => m.project_id === activeProjectId && m.user_id === ident.id);
+      const currentName = ident.name || (myMember && myMember.name) || '';
+      const currentRole = ident.role || (myMember && myMember.role) || 'Member';
+      const currentAvatar = ident.avatar_url || (myMember && myMember.avatar_url) || '';
+
+      document.getElementById('profileNameInput').value = currentName;
+      document.getElementById('profileRoleInput').value = currentRole;
+      document.getElementById('profileAvatarData').value = currentAvatar;
+      document.getElementById('profileAvatarFile').value = '';
+      updateProfileAvatarPreview(currentAvatar, currentName);
+
+      animateModalOpen('editProfileModal');
+      setTimeout(() => document.getElementById('profileNameInput').focus(), 60);
+    }
+
+    function closeEditProfileModal() {
+      animateModalClose('editProfileModal');
+    }
+
+    function handleProfileAvatarUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        showToast(currentLang === 'en' ? 'Please choose a valid image file' : 'يرجى اختيار ملف صورة صالح');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const size = 160;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          const minSide = Math.min(img.width, img.height);
+          const sx = (img.width - minSide) / 2;
+          const sy = (img.height - minSide) / 2;
+          ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+          const dataUrl = canvas.toDataURL('image/webp', 0.85);
+          document.getElementById('profileAvatarData').value = dataUrl;
+          updateProfileAvatarPreview(dataUrl, document.getElementById('profileNameInput').value.trim());
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearProfileAvatar() {
+      document.getElementById('profileAvatarData').value = '__CLEARED__';
+      document.getElementById('profileAvatarFile').value = '';
+      updateProfileAvatarPreview('', document.getElementById('profileNameInput').value.trim());
+    }
+
+    async function saveOwnProfile(e) {
+      e.preventDefault();
+      const ident = getCurrentIdentity();
+      if (!ident.id) return;
+
+      const newName = document.getElementById('profileNameInput').value.trim();
+      const newRole = document.getElementById('profileRoleInput').value.trim() || 'Member';
+      const rawAvatar = document.getElementById('profileAvatarData').value;
+      const avatarCleared = rawAvatar === '__CLEARED__';
+      const newAvatar = avatarCleared ? '' : rawAvatar;
+
+      if (!newName) {
+        return showToast(currentLang === 'en' ? 'Please enter your display name' : 'اكتب اسمك أولاً');
+      }
+
+      const saveBtn = document.getElementById('saveProfileBtn');
+      if (saveBtn) saveBtn.disabled = true;
+
+      try {
+        // Persist profile override locally for instant UI sync
+        saveProfileOverride(ident.id, {
+          name: newName,
+          role: newRole,
+          avatar_url: newAvatar,
+          avatar_cleared: avatarCleared
+        });
+
+        if (!currentUser) {
+          localStorage.setItem('enjaz_username', newName);
+          document.getElementById('userNameInput').value = newName;
+        } else {
+          // Persist custom profile metadata on the signed-in user's own Supabase account
+          const { data: updated } = await db.auth.updateUser({
+            data: {
+              custom_name: newName,
+              custom_role: newRole,
+              custom_avatar_url: newAvatar
+            }
+          });
+          if (updated && updated.user) {
+            currentUser = updated.user;
+          }
+        }
+
+        // Update ONLY this user's own rows in project_members
+        await db
+          .from('project_members')
+          .update({
+            name: newName,
+            role: newRole,
+            avatar_url: newAvatar
+          })
+          .eq('user_id', ident.id);
+
+        if (activeProjectId) {
+          await registerCurrentUserInProject(newRole);
+        }
+
+        renderAuthUI();
+        await loadMembersOnly();
+        closeEditProfileModal();
+        showToast(t('profileSavedToast'));
+      } finally {
+        if (saveBtn) saveBtn.disabled = false;
       }
     }
 
@@ -3523,6 +3820,11 @@
       if (currentUser) return;
       const v = e.target.value.trim();
       localStorage.setItem('enjaz_username', v);
+      const guestId = localStorage.getItem('enjaz_guest_id');
+      if (guestId) {
+        const prev = getSavedProfileOverride(guestId);
+        saveProfileOverride(guestId, { ...prev, name: v });
+      }
       renderAuthUI();
       clearTimeout(_nameDebounce);
       _nameDebounce = setTimeout(() => registerCurrentUserInProject(), 800);
@@ -3911,14 +4213,6 @@
         return;
       }
 
-      const providerBadgeMap = {
-        google: { label: 'Google', cls: 'bg-blue-500/15 text-blue-300 border-blue-400/25' },
-        discord: { label: 'Discord', cls: 'bg-[#5865F2]/20 text-[#99aaf5] border-[#5865F2]/30' },
-        github: { label: 'GitHub', cls: 'bg-zinc-800 text-zinc-200 border-zinc-700' },
-        guest: { label: t('guest'), cls: 'bg-zinc-900 text-zinc-400 border-zinc-700/60' },
-        manual: { label: t('manualAdded'), cls: 'bg-brand/15 text-brand border-brand/30' }
-      };
-
       const myIdent = getCurrentIdentity();
 
       projMembers.forEach((m, idx) => {
@@ -3929,7 +4223,6 @@
           (t.assignee || '').trim().toLowerCase() === (m.name || '').trim().toLowerCase()
         ));
         const inProgCount = assignedTasks.filter(t => getTaskStatus(t) === 'in_progress').length;
-        const pb = providerBadgeMap[m.provider] || providerBadgeMap.guest;
         const joinDate = m.joined_at ? new Date(m.joined_at).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'ar-EG', { month: 'short', day: 'numeric' }) : '';
 
         const card = document.createElement('div');
@@ -3948,18 +4241,29 @@
                   <h3 class="font-display font-extrabold text-sm text-white truncate">${escapeHtml(m.name)}</h3>
                   ${isMe ? `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-brand/15 text-brand border border-brand/25">${t('youBadge')}</span>` : ''}
                 </div>
-                <p class="text-[11px] text-zinc-400 truncate mt-0.5">${escapeHtml(m.email || m.role || t('teamMemberDefault'))}</p>
+                <p class="text-[11px] text-zinc-400 truncate mt-0.5">${escapeHtml(m.role || t('teamMemberDefault'))}</p>
                 <div class="flex items-center gap-1.5 mt-2 flex-wrap">
-                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md border ${pb.cls}">${pb.label}</span>
                   ${m.role ? `<span class="text-[10px] font-medium px-2 py-0.5 rounded-md bg-obsidian text-zinc-300 border border-borderSubtle">${escapeHtml(m.role)}</span>` : ''}
                   ${joinDate ? `<span class="text-[10px] text-zinc-400">${t('joinedLabel')} ${joinDate}</span>` : ''}
                 </div>
               </div>
             </div>
-            <button onclick="${isMe ? `leaveProject('${activeProjectId}')` : `removeMember('${m.id}')`}"
-              title="${isMe ? t('leaveProjectBtn') : t('removeMemberTitle')}"
-              aria-label="${isMe ? t('leaveProjectBtn') : t('removeMemberTitle')}"
-              class="text-zinc-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition">${isMe ? ICONS.leave : ICONS.close}</button>
+            <div class="flex items-center gap-1 shrink-0">
+              ${isMe ? `
+                <button type="button" onclick="openEditProfileModal('${escapeHtml(m.user_id)}')"
+                  title="${escapeHtml(t('editProfileBtn'))}"
+                  aria-label="${escapeHtml(t('editProfileBtn'))}"
+                  class="text-zinc-300 hover:text-brand p-1.5 rounded-lg hover:bg-brand/12 transition">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>` : ''}
+              <button type="button" onclick="${isMe ? `leaveProject('${activeProjectId}')` : `removeMember('${m.id}')`}"
+                title="${isMe ? t('leaveProjectBtn') : t('removeMemberTitle')}"
+                aria-label="${isMe ? t('leaveProjectBtn') : t('removeMemberTitle')}"
+                class="text-zinc-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition">${isMe ? ICONS.leave : ICONS.close}</button>
+            </div>
           </div>
 
           <div class="grid grid-cols-3 gap-2 bg-obsidian/90 border border-borderSubtle rounded-xl p-3 text-center">
@@ -5491,6 +5795,7 @@ Rules for \`enjaz-tasks\`:
       closeTaskModal();
       closeProjectModal();
       closeAddMemberModal();
+      closeEditProfileModal();
       closeMobileProjectMenu();
       closeAiChat();
       toggleMobileSidebar(false);
