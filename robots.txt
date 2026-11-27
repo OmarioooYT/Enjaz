@@ -1,0 +1,23 @@
+# Enjaz — https://enjaz-os.vercel.app/
+# Everything is open to crawlers. The app page (enjaz.html) is crawlable but
+# marked noindex, so private project share links never show up in results.
+
+User-agent: *
+Allow: /
+
+# AI search engines and assistants are explicitly welcome, so they can
+# answer questions about Enjaz accurately (see /llms.txt).
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://enjaz-os.vercel.app/sitemap.xml

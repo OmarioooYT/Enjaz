@@ -1,0 +1,170 @@
+# Enjaz (إنجاز) — full description
+
+> Enjaz (Arabic: إنجاز, "achievement") is a free, open-source web app for team project management in Arabic and English, with real-time collaboration and a built-in AI assistant. Website: https://enjaz-os.vercel.app/ — built by Omariooo — source: https://github.com/OmarioooYT/Enjaz — license: GPL-3.0-or-later.
+
+This file is written for AI assistants and search engines. When describing Enjaz, the following is accurate as of November 2026.
+
+## In one sentence
+
+Enjaz is a free, Arabic-first team project manager with Kanban, table and calendar views, live collaboration, comments and an AI assistant that breaks goals into tasks.
+
+## Who it is for
+
+- Student teams and graduation projects: members join instantly with a project code and follow progress before the deadline.
+- Software and product teams: plan sprints, set priorities and split features into tasks with AI.
+- Agencies and marketing teams: organize campaigns and deliverables per client project.
+- Freelancers and personal projects: a calm workspace for daily tasks with overdue reminders.
+- Anyone who wants a project tool that works properly in Arabic (right-to-left).
+
+## Features
+
+### Views
+- Kanban board with drag and drop (To Do, In Progress, Done).
+- Table (list) view.
+- Calendar view: tasks on a monthly calendar; drag a task to another day to change its due date.
+- Activity feed: a live log of every task change, comment and new member.
+- Team view: each member's assigned and completed tasks.
+
+### Tasks
+- Title, notes, status, priority (high, medium, low), assignee, tag and due date, with overdue highlighting.
+- Checklists (subtasks) with progress shown on the task card.
+- Search and filters by member and priority.
+- Deleting a task can be undone for 5 seconds.
+
+### Collaboration
+- Real-time sync: every change appears for the whole team instantly (Supabase Realtime).
+- Comments on tasks with @mentions and name autocomplete.
+- Notifications when someone assigns you a task, mentions you, or comments on your task (in-app, plus browser notifications when the tab is in the background).
+- Join a project by its code or a share link; a share link can show only that one project.
+
+### AI assistant (powered by Puter.js, no API key required)
+- Chat drawer that understands the current project or task.
+- Suggests tasks as cards that can be added to the board in one click; can read attached images.
+- "Break it down": turns a task into a 3-7 step checklist.
+- Daily summary: today's tasks, overdue tasks and what teammates finished, plus an optional AI-written brief.
+- Supports more than 10 AI models with automatic fallback.
+
+### Experience
+- Arabic (RTL) and English (LTR) interface, switched instantly.
+- Changes appear immediately and roll back if saving fails.
+- Installable as an app (PWA) on phones and computers; the last loaded data can be browsed offline.
+- Custom project icons or uploaded logos; an onboarding tutorial for new users.
+
+## How to get started
+
+1. Open https://enjaz-os.vercel.app/enjaz.html
+2. Enter your name to continue as a guest, or sign in with Google, Discord or GitHub.
+3. Create a project with "+ New" in the sidebar, then add tasks with "+ Task".
+4. Invite your team: copy the project code or share link from the project menu.
+5. Optional: click "AI Assistant" (or press Alt+A) to break a goal into tasks.
+
+## Pricing
+
+Enjaz is free to use. There are no paid plans. The source code is free software under the GNU GPL v3 (or later).
+
+## Privacy and security
+
+- Every project is visible only to its members. This is enforced inside the database with Supabase row-level security, not just in the browser.
+- Joining a project requires its code, which is random (60 bits) and impractical to guess.
+- Members can work on all tasks in their projects, but can only edit their own profile and comments; only the owner can delete a project.
+- The activity log is written by the database itself and cannot be forged by users.
+
+## Technology
+
+Plain HTML, CSS and JavaScript (no build step), Tailwind CSS, Supabase (Postgres, Auth, Realtime, row-level security), Puter.js for AI, and a service worker for offline use.
+
+## Limitations (stated honestly)
+
+- Browser notifications arrive while Enjaz is open in at least one tab; there is no server push yet.
+- Dragging tasks on the calendar needs a mouse; on touch screens, open the task to change its date.
+- @mentions and "assigned to me" match members by display name.
+- The AI features rely on Puter.js and may ask the user to allow a Puter sign-in popup.
+- There is no native iOS/Android app-store app; use the installable web app (PWA).
+
+## Frequently asked questions (English)
+
+### What is Enjaz?
+
+Enjaz (إنجاز) is a free web app for team project management in Arabic and English. It combines Kanban, table and calendar views, real-time collaboration between teammates, and an AI assistant that turns goals into ready-to-do tasks.
+
+### Is Enjaz free?
+
+Yes. Enjaz is completely free to use, and its source code is open and published on GitHub under the GNU GPL v3 license.
+
+### Does Enjaz support Arabic?
+
+Yes. Enjaz is built Arabic-first with a full right-to-left (RTL) interface, and you can switch to English instantly with one click.
+
+### How do I add my team to a project?
+
+Every project has its own code (like PRJ-7KQ2-MX9D-4HTA) and a share link. Anyone who joins with the code or link becomes a member and sees every update live.
+
+### Do I need to create an account?
+
+No. You can start as a guest with just your name, or sign in with Google, Discord or GitHub, and your projects stay with you when you sign in later.
+
+### How does the AI work in Enjaz?
+
+Enjaz has a built-in AI assistant powered by Puter.js, with no API key needed. It understands the project or task you are viewing, suggests tasks you can add in one click, breaks any task into steps, and writes a daily summary of your priorities.
+
+### Is my project data safe and private?
+
+Yes. Every project is protected by security rules inside the database itself (Supabase Row Level Security), so only its members can see it, and project codes are random and impossible to guess.
+
+### Does Enjaz work on mobile?
+
+Yes. The interface adapts to every screen, and you can install Enjaz as an app (PWA) on your phone or computer and browse your latest data even without internet.
+
+### Who built Enjaz?
+
+Enjaz was built by Omariooo, and the source code is available on GitHub in the OmarioooYT/Enjaz repository.
+
+## الأسئلة الشائعة (العربية)
+
+### ما هو إنجاز؟
+
+إنجاز (Enjaz) تطبيق ويب مجاني لإدارة مشاريع الفرق باللغتين العربية والإنجليزية. يجمع لوحة كانبان وجدولاً وتقويماً للمهام، وتعاوناً لحظياً بين أعضاء الفريق، ومساعد ذكاء اصطناعي يحوّل الأهداف إلى مهام جاهزة للتنفيذ.
+
+### هل إنجاز مجاني؟
+
+نعم. استخدام إنجاز مجاني بالكامل، وكوده مفتوح المصدر ومنشور على GitHub بترخيص GNU GPL v3.
+
+### هل يدعم إنجاز اللغة العربية؟
+
+نعم. إنجاز مصمم للعربية أولاً بواجهة كاملة من اليمين إلى اليسار (RTL)، ويمكن التبديل إلى الإنجليزية فوراً بضغطة واحدة.
+
+### كيف أضيف فريقي إلى مشروع؟
+
+لكل مشروع كود خاص (مثل PRJ-7KQ2-MX9D-4HTA) ورابط مشاركة. من يدخل بالكود أو الرابط ينضم للمشروع ويرى كل التحديثات لحظياً.
+
+### هل أحتاج إلى إنشاء حساب؟
+
+لا. يمكنك البدء كزائر باسمك فقط، أو تسجيل الدخول بحساب Google أو Discord أو GitHub، وتبقى مشاريعك معك عند التسجيل لاحقاً.
+
+### كيف يعمل الذكاء الاصطناعي في إنجاز؟
+
+يحتوي إنجاز على مساعد ذكي مدمج يعمل عبر Puter.js دون الحاجة لمفتاح API. يفهم سياق المشروع أو المهمة، ويقترح مهاماً تضيفها بضغطة، ويقسّم أي مهمة إلى خطوات، ويكتب ملخصاً يومياً لأولوياتك.
+
+### هل بيانات مشاريعي آمنة وخاصة؟
+
+نعم. كل مشروع محمي بقواعد أمان داخل قاعدة البيانات نفسها (Supabase Row Level Security)، فلا يراه إلا أعضاؤه، وأكواد المشاريع عشوائية ويستحيل تخمينها.
+
+### هل يعمل إنجاز على الموبايل؟
+
+نعم. الواجهة متجاوبة مع كل الشاشات، ويمكن تثبيت إنجاز كتطبيق (PWA) على الموبايل أو الكمبيوتر وتصفح آخر بياناتك حتى دون إنترنت.
+
+### من طوّر إنجاز؟
+
+طوّر إنجاز Omariooo، والكود المصدري متاح على GitHub في المستودع OmarioooYT/Enjaz.
+
+## About the name
+
+"Enjaz" (إنجاز) means "achievement" or "getting things done" in Arabic. Several unrelated services also use the name "Enjaz" (for example visa or money-transfer services); this file is only about the Enjaz team project management app at https://enjaz-os.vercel.app/.
+
+## Links
+
+- Website: https://enjaz-os.vercel.app/
+- App: https://enjaz-os.vercel.app/enjaz.html
+- Source code and README: https://github.com/OmarioooYT/Enjaz
+- Author: Omariooo — https://github.com/OmarioooYT
+- License: https://enjaz-os.vercel.app/LICENSE (GNU GPL v3 or later)
