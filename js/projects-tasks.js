@@ -1,16 +1,16 @@
 function setViewMode(mode) {
   viewMode = mode;
-  ['board', 'list', 'team'].forEach(m => {
+  ['board', 'list', 'calendar', 'activity', 'team'].forEach(m => {
     const dBtn = document.getElementById(`viewBtn-${m}`);
     const dBase = 'px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ';
     if (dBtn) dBtn.className = dBase + (m === mode ? 'bg-brand text-white shadow-sm' : 'text-zinc-400 hover:text-white');
 
     const mBtn = document.getElementById(`mViewBtn-${m}`);
-    const mBase = 'py-1.5 rounded-lg text-[11px] font-semibold transition ' + (m === 'team' ? 'flex items-center justify-center gap-1 ' : 'text-center ');
+    const mBase = 'py-1.5 rounded-lg text-[11px] font-semibold transition truncate ' + (m === 'team' ? 'flex items-center justify-center gap-1 ' : 'text-center ');
     if (mBtn) mBtn.className = mBase + (m === mode ? 'bg-brand text-white' : 'text-zinc-400');
   });
   renderWorkspace();
-  const activeViewId = mode === 'board' ? 'boardView' : mode === 'list' ? 'listView' : 'teamView';
+  const activeViewId = { board: 'boardView', list: 'listView', calendar: 'calendarView', activity: 'activityView', team: 'teamView' }[mode] || 'boardView';
   const panel = document.getElementById(activeViewId);
   if (panel) {
     panel.classList.remove('animate-view-enter');
@@ -19,8 +19,8 @@ function setViewMode(mode) {
   }
 }
 
-function openTaskModal(taskId = null, defaultStatus = 'todo') {
-  if (!activeProjectId) return showToast('أنشئ مشروعاً أولاً');
+function openTaskModal(taskId = null, defaultStatus = 'todo', defaultDueDate = '') {
+  if (!activeProjectId) return showToast(currentLang === 'en' ? 'Create a project first' : 'أنشئ مشروعاً أولاً');
   const modal = document.getElementById('taskModal');
   const delBtn = document.getElementById('deleteTaskBtn');
   const aiTaskBtn = document.getElementById('askAiTaskModalBtn');
@@ -44,9 +44,15 @@ function openTaskModal(taskId = null, defaultStatus = 'todo') {
     document.getElementById('taskForm').reset();
     document.getElementById('fTaskStatus').value = defaultStatus;
     document.getElementById('fTaskPriority').value = 'medium';
+    document.getElementById('fTaskDueDate').value = defaultDueDate || '';
     delBtn.classList.add('hidden');
     if (aiTaskBtn) aiTaskBtn.classList.add('hidden');
   }
+  initModalSubtasks(taskId ? tasks.find(x => x.id === taskId) : null);
+  const commentInput = document.getElementById('commentInput');
+  if (commentInput) commentInput.value = '';
+  hideMentionSuggest();
+  renderModalComments();
   animateModalOpen('taskModal');
   setTimeout(() => document.getElementById('fTaskTitle').focus(), 50);
 }
@@ -55,6 +61,26 @@ function closeTaskModal() {
   animateModalClose('taskModal');
 }
 
+// Tries the full payload, then without newer columns, for databases that
+// have not run the latest schema yet. Returns the final error (or null).
+async function writeTaskWithFallback(kind, payload, id) {
+  const run = (p) => (kind === 'insert'
+    ? db.from('tasks').insert([p])
+    : db.from('tasks').update(p).eq('id', id));
+  let { error } = await run(payload);
+  if (error) {
+    const { subtasks: _st, ...noSubtasks } = payload;
+    ({ error } = await run(noSubtasks));
+    if (error) {
+      const { notes: _n, status: _s, due_date: _d, ...legacy } = noSubtasks;
+      ({ error } = await run(legacy));
+    }
+  }
+  return error;
+}
+
+// Optimistic save: the change shows immediately and is rolled back if the
+// database rejects it. Realtime then syncs everyone else.
 async function saveTask(e) {
   e.preventDefault();
   const editId = document.getElementById('editTaskId').value;
@@ -65,75 +91,73 @@ async function saveTask(e) {
   const assignee = document.getElementById('fTaskAssignee').value.trim();
   const category = document.getElementById('fTaskCategory').value.trim();
   const due_date = document.getElementById('fTaskDueDate').value || null;
-  const user = getCurrentIdentity().name || 'عضو';
+  const subtasks = getModalSubtasks();
+  const user = getCurrentIdentity().name || (currentLang === 'en' ? 'Member' : 'عضو');
   const isDone = status === 'done';
+  const isEn = currentLang === 'en';
 
   if (!title) return;
   closeTaskModal();
 
   if (editId) {
+    const task = tasks.find(x => x.id === editId);
+    const before = task ? { ...task } : null;
+    const wasDone = Boolean(task && getTaskStatus(task) === 'done');
     const updatePayload = {
-      title, notes, status, priority, assignee, category, due_date,
+      title, notes, status, priority, assignee, category, due_date, subtasks,
       done: isDone,
-      completed_by: isDone ? user : '',
-      completed_at: isDone ? Date.now() : null
+      completed_by: isDone ? ((wasDone && task.completed_by) || user) : '',
+      completed_at: isDone ? ((wasDone && task.completed_at) || Date.now()) : null
     };
-    let { error } = await db.from('tasks').update(updatePayload).eq('id', editId);
-    if (error) {
-      ({ error } = await db.from('tasks').update({
-        title, priority, assignee, category, done: isDone,
-        completed_by: isDone ? user : '', completed_at: isDone ? Date.now() : null
-      }).eq('id', editId));
+    if (task) {
+      Object.assign(task, updatePayload);
+      if (isDone && !wasDone) lastCompletedTaskId = editId;
+      renderAll();
     }
+    const error = task
+      ? await trackPendingWrite(pendingTaskWrites, editId, task, () => writeTaskWithFallback('update', updatePayload, editId))
+      : await writeTaskWithFallback('update', updatePayload, editId);
     if (error) {
-      showToast(currentLang === 'en' ? 'Failed to update task' : 'تعذر تحديث المهمة');
+      if (task && before) {
+        Object.keys(task).forEach(k => delete task[k]);
+        Object.assign(task, before);
+      }
+      renderAll();
+      showToast(isEn ? 'Failed to update task' : 'تعذر تحديث المهمة');
     } else {
-      showToast(currentLang === 'en' ? 'Task updated ✓' : 'تم تحديث المهمة بنجاح ✓');
+      showToast(isEn ? 'Task updated ✓' : 'تم تحديث المهمة بنجاح ✓');
     }
   } else {
     const newTask = {
-      id: 'TSK-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
+      id: randomId('TSK'),
       project_id: activeProjectId,
-      title, notes, status, priority, assignee, category, due_date,
+      title, notes, status, priority, assignee, category, due_date, subtasks,
       done: isDone,
       completed_by: isDone ? user : '',
       completed_at: isDone ? Date.now() : null,
       created_by: user,
       created_at: Date.now()
     };
-    let { error } = await db.from('tasks').insert([newTask]);
+    tasks.unshift(newTask);
+    renderAll();
+    const error = await trackPendingWrite(pendingTaskWrites, newTask.id, newTask, () => writeTaskWithFallback('insert', newTask));
     if (error) {
-      const { notes: _n, status: _s, due_date: _d, ...legacyTask } = newTask;
-      ({ error } = await db.from('tasks').insert([legacyTask]));
-    }
-    if (error) {
-      showToast(currentLang === 'en' ? 'Failed to add task' : 'تعذر إضافة المهمة');
+      tasks = tasks.filter(x => x.id !== newTask.id);
+      renderAll();
+      showToast(isEn ? 'Failed to add task' : 'تعذر إضافة المهمة');
     } else {
-      showToast(currentLang === 'en' ? 'Task added ⚡' : 'تمت إضافة المهمة بنجاح ⚡');
+      showToast(isEn ? 'Task added ⚡' : 'تمت إضافة المهمة بنجاح ⚡');
     }
   }
-  loadAllData();
 }
 
-async function deleteEditingTask() {
+// No confirmation dialog: the task disappears at once and can be restored
+// from the toast for a few seconds.
+function deleteEditingTask() {
   const id = document.getElementById('editTaskId').value;
   if (!id) return;
-  const isEn = currentLang === 'en';
-  const ok = await showConfirmDialog({
-    title: isEn ? 'Delete Task' : 'حذف المهمة',
-    message: isEn ? 'Permanently delete this task? This action cannot be undone.' : 'هل أنت متأكد من حذف هذه المهمة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
-    confirmText: isEn ? 'Delete Task' : 'حذف نهائياً',
-    variant: 'danger'
-  });
-  if (!ok) return;
   closeTaskModal();
-  const { error } = await db.from('tasks').delete().eq('id', id);
-  if (error) {
-    showToast(isEn ? 'Failed to delete task' : 'تعذر حذف المهمة');
-  } else {
-    showToast(isEn ? 'Task deleted' : 'تم حذف المهمة');
-  }
-  loadAllData();
+  deleteTaskWithUndo(id);
 }
 
 async function quickChangeProjectStatus(newStatus) {
@@ -196,14 +220,25 @@ async function saveProject() {
   closeProjectModal();
   const isEn = currentLang === 'en';
   if (editId) {
+    const proj = projects.find(p => p.id === editId);
+    const before = proj ? { ...proj } : null;
+    if (proj) {
+      Object.assign(proj, { name, status, description, icon });
+      renderAll();
+    }
     let { error } = await db.from('projects').update({ name, status, description, icon }).eq('id', editId);
     if (error) {
       document.getElementById('schemaAlert').classList.remove('hidden');
       ({ error } = await db.from('projects').update({ name, description, icon }).eq('id', editId));
     }
+    if (error && proj && before) {
+      Object.assign(proj, before);
+      renderAll();
+    }
     showToast(error
       ? (isEn ? 'Failed to update project' : 'تعذر تحديث المشروع')
       : (isEn ? 'Project updated ✓' : 'تم تحديث بيانات المشروع ✓'));
+    return;
   } else {
     const newId = generateProjectCode();
     let { error } = await db.from('projects').insert([{ id: newId, name, status, description, icon, created_at: Date.now() }]);

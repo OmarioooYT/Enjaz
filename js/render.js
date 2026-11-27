@@ -210,11 +210,17 @@ function renderWorkspace() {
   document.getElementById('boardView').classList.toggle('hidden', viewMode !== 'board');
   document.getElementById('listView').classList.toggle('hidden', viewMode !== 'list');
   document.getElementById('teamView').classList.toggle('hidden', viewMode !== 'team');
-  document.getElementById('filterBar').classList.toggle('hidden', viewMode === 'team');
+  document.getElementById('calendarView').classList.toggle('hidden', viewMode !== 'calendar');
+  document.getElementById('activityView').classList.toggle('hidden', viewMode !== 'activity');
+  document.getElementById('filterBar').classList.toggle('hidden', viewMode === 'team' || viewMode === 'activity');
 
   if (viewMode === 'board') renderKanban(filtered);
   else if (viewMode === 'list') renderList(filtered);
+  else if (viewMode === 'calendar') renderCalendar(filtered);
+  else if (viewMode === 'activity') renderActivityView();
   else renderTeamView(projMembers, projTasks);
+
+  renderDailySummary();
 
   if (typeof renderAiContextOptions === 'function') renderAiContextOptions();
 }
@@ -455,6 +461,8 @@ function renderKanban(list) {
 
         ${task.notes ? `<p class="text-[11px] text-zinc-400 leading-relaxed line-clamp-2">${escapeHtml(task.notes)}</p>` : ''}
 
+        ${renderTaskMetaRow(task)}
+
         <div class="pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2 text-[11px]">
           <div class="flex items-center gap-2 min-w-0">
             ${task.assignee ? `
@@ -519,6 +527,7 @@ function renderList(list) {
       <td class="py-3.5 px-4">
         <p class="font-semibold ${st === 'done' ? 'line-through text-zinc-500' : 'text-zinc-100'}">${escapeHtml(task.title)}</p>
         ${st === 'done' && task.completed_by ? `<span class="text-[10px] text-emerald-400">${t('completedBy')} ${escapeHtml(task.completed_by)}</span>` : ''}
+        <div class="mt-1">${renderTaskMetaRow(task)}</div>
       </td>
       <td class="py-3.5 px-4">${statusLabels[st]}</td>
       <td class="py-3.5 px-4">${prioLabels[task.priority] || prioLabels.medium}</td>
@@ -573,14 +582,18 @@ async function updateTaskStatus(taskId, newStatus) {
     completed_at: isDone ? Date.now() : null
   };
 
-  let { error } = await db.from('tasks').update(payload).eq('id', taskId);
-  if (error) {
-    ({ error } = await db.from('tasks').update({
-      done: isDone,
-      completed_by: isDone ? user : '',
-      completed_at: isDone ? Date.now() : null
-    }).eq('id', taskId));
-  }
+  const write = async () => {
+    let res = await db.from('tasks').update(payload).eq('id', taskId);
+    if (res.error) {
+      res = await db.from('tasks').update({
+        done: isDone,
+        completed_by: isDone ? user : '',
+        completed_at: isDone ? Date.now() : null
+      }).eq('id', taskId);
+    }
+    return res;
+  };
+  const { error } = target ? await trackPendingWrite(pendingTaskWrites, taskId, target, write) : await write();
   if (error) {
     showToast(currentLang === 'en' ? 'Failed to update task status' : 'تعذر تحديث حالة المهمة');
     loadAllData();

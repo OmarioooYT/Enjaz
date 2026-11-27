@@ -68,6 +68,8 @@ async function loadAllData() {
       projects = [];
       tasks = [];
       members = [];
+      comments = [];
+      activity = [];
       activeProjectId = null;
       syncDot.className = 'w-1.5 h-1.5 rounded-full bg-brand';
       syncText.dataset.state = 'connectedLive';
@@ -93,16 +95,27 @@ async function loadAllData() {
 
     const validIds = projects.map(p => p.id);
     if (validIds.length > 0) {
-      const [taskRes, memRes] = await Promise.all([
+      const [taskRes, memRes, comRes, actRes] = await Promise.all([
         db.from('tasks').select('*').in('project_id', validIds).order('created_at', { ascending: false }),
-        db.from('project_members').select('*').in('project_id', validIds).order('joined_at', { ascending: true })
+        db.from('project_members').select('*').in('project_id', validIds).order('joined_at', { ascending: true }),
+        db.from('task_comments').select('*').in('project_id', validIds).order('created_at', { ascending: true }),
+        db.from('activity_log').select('*').in('project_id', validIds).order('created_at', { ascending: false }).limit(300)
       ]);
       if (taskRes.error) throw taskRes.error;
-      tasks = taskRes.data || [];
+      // Hide tasks whose delete is waiting for the undo window to pass.
+      const fetchedTasks = (taskRes.data || []).filter(x => !pendingTaskDeletes.has(x.id));
+      const fetchedComments = comRes.error ? [] : (comRes.data || []);
+      mergePendingWrites(fetchedTasks, fetchedComments, validIds);
+      tasks = fetchedTasks;
       members = memRes.error ? [] : (memRes.data || []);
+      comments = fetchedComments;
+      activity = actRes.error ? [] : (actRes.data || []);
+      activityAvailable = !actRes.error;
     } else {
       tasks = [];
       members = [];
+      comments = [];
+      activity = [];
     }
 
     syncDot.className = 'w-1.5 h-1.5 rounded-full bg-brand';
@@ -110,14 +123,18 @@ async function loadAllData() {
     syncText.textContent = t('connectedLive');
 
     renderAll();
+    saveOfflineSnapshot();
     if (activeProjectId && hasIdentity()) {
       registerCurrentUserInProject();
     }
   } catch (err) {
     console.error(err);
-    syncDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-500';
-    syncText.dataset.state = 'connectionError';
-    syncText.textContent = t('connectionError');
+    // Fall back to the last saved copy so the app is still browsable offline.
+    if (!loadOfflineSnapshot()) {
+      syncDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-500';
+      syncText.dataset.state = 'connectionError';
+      syncText.textContent = t('connectionError');
+    }
   } finally {
     _dataLoadInFlight = false;
     if (_dataLoadPending) {
@@ -142,5 +159,7 @@ function subscribeRealtime() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, scheduleRealtimeReload)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, scheduleRealtimeReload)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'project_members' }, scheduleMembersReload)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'task_comments' }, handleCommentsRealtime)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_log' }, handleActivityRealtime)
     .subscribe();
 }

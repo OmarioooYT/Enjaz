@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>إنجاز | إدارة مشاريع الفريق</title>
   <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#07070A" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://js.puter.com/v2/"></script>
@@ -173,6 +177,13 @@
         </svg>
         <span data-i18n="tutorialBtn">دليل البدء السريع (Tutorial)</span>
       </button>
+      <button id="installAppBtn" onclick="installApp()"
+        class="hidden w-full py-2 px-3 rounded-xl bg-brand/12 hover:bg-brand/20 border border-brand/25 text-[11px] text-brand font-semibold transition flex items-center justify-center gap-1.5">
+        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+        </svg>
+        <span data-i18n="installApp">تثبيت التطبيق</span>
+      </button>
     </div>
   </aside>
 
@@ -240,7 +251,7 @@
           <div class="relative hidden lg:block">
             <input id="searchInput" type="text" oninput="syncSearch(this.value)"
               data-i18n-placeholder="searchTasksPlaceholder" placeholder="بحث في المهام..."
-              class="bg-surface/90 border border-borderSubtle rounded-xl ps-9 pe-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand/60 w-40 xl:w-48 transition" />
+              class="bg-surface/90 border border-borderSubtle rounded-xl ps-9 pe-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand/60 w-28 xl:w-48 transition" />
             <svg class="w-3.5 h-3.5 text-zinc-400 absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none"
               fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="11" cy="11" r="8" />
@@ -250,7 +261,7 @@
 
           <!-- Desktop View Switcher -->
           <div class="hidden lg:flex items-center bg-surface border border-borderSubtle rounded-xl p-1 gap-0.5">
-            <button onclick="setViewMode('board')" id="viewBtn-board"
+            <button onclick="setViewMode('board')" id="viewBtn-board" title="Kanban" aria-label="Kanban"
               class="px-2.5 py-1 rounded-lg text-xs font-semibold transition bg-brand text-white flex items-center gap-1.5 shadow-sm">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
                 aria-hidden="true">
@@ -258,17 +269,27 @@
                 <rect width="6" height="9" x="15" y="5" rx="1.5" />
                 <rect width="6" height="11" x="9" y="5" rx="1.5" opacity="0" />
               </svg>
-              <span>Kanban</span>
+              <span class="hidden 2xl:inline">Kanban</span>
             </button>
-            <button onclick="setViewMode('list')" id="viewBtn-list"
+            <button onclick="setViewMode('list')" id="viewBtn-list" data-i18n-title="tableTab" title="tableTab" aria-label="list"
               class="px-2.5 py-1 rounded-lg text-xs font-semibold transition text-zinc-400 hover:text-white flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
                 aria-hidden="true">
                 <path stroke-linecap="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
               </svg>
-              <span data-i18n="tableTab">جدول</span>
+              <span data-i18n="tableTab" class="hidden 2xl:inline">جدول</span>
             </button>
-            <button onclick="setViewMode('team')" id="viewBtn-team"
+            <button onclick="setViewMode('calendar')" id="viewBtn-calendar" data-i18n-title="calendarTab" title="calendarTab" aria-label="calendar"
+              class="px-2.5 py-1 rounded-lg text-xs font-semibold transition text-zinc-400 hover:text-white flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" /><path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18" /></svg>
+              <span data-i18n="calendarTab" class="hidden 2xl:inline">تقويم</span>
+            </button>
+            <button onclick="setViewMode('activity')" id="viewBtn-activity" data-i18n-title="activityTab" title="activityTab" aria-label="activity"
+              class="px-2.5 py-1 rounded-lg text-xs font-semibold transition text-zinc-400 hover:text-white flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+              <span data-i18n="activityTab" class="hidden 2xl:inline">النشاط</span>
+            </button>
+            <button onclick="setViewMode('team')" id="viewBtn-team" data-i18n-title="teamTab" title="teamTab" aria-label="team"
               class="px-2.5 py-1 rounded-lg text-xs font-semibold transition text-zinc-400 hover:text-white flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
                 aria-hidden="true">
@@ -277,13 +298,23 @@
                 <path stroke-linecap="round" stroke-linejoin="round"
                   d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
-              <span data-i18n="teamTab">الفريق</span>
+              <span data-i18n="teamTab" class="hidden 2xl:inline">الفريق</span>
               <span id="teamTabCount"
                 class="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-md bg-brand/15 text-brand">0</span>
             </button>
           </div>
 
           <div class="hidden lg:block h-5 w-px bg-white/10 mx-0.5"></div>
+
+          <!-- Notifications toggle -->
+          <button id="notifyBtn" type="button" onclick="toggleNotifications()" data-i18n-title="notifyBtnTitle" title="الإشعارات"
+            aria-pressed="false"
+            class="w-9 h-9 rounded-xl bg-surface hover:bg-surfaceHover border border-borderSubtle text-zinc-400 hover:text-white flex items-center justify-center active:scale-95 transition shrink-0">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" />
+              <path id="notifyBtnSlash" stroke-linecap="round" d="M3 3l18 18" />
+            </svg>
+          </button>
 
           <!-- AI Chat Assistant CTA -->
           <button id="aiHeaderBtn" type="button" onclick="openAiChat('project')" data-i18n-title="aiBtnTitle"
@@ -297,9 +328,9 @@
                   d="M12 2.5c.45 3.65 1.85 5.05 5.5 5.5-3.65.45-5.05 1.85-5.5 5.5-.45-3.65-1.85-5.05-5.5-5.5 3.65-.45 5.05-1.85 5.5-5.5Zm6.5 11.5c.25 1.9 1 2.65 2.9 2.9-1.9.25-2.65 1-2.9 2.9-.25-1.9-1-2.65-2.9-2.9 1.9-.25 2.65-1 2.9-2.9Z" />
               </svg>
             </span>
-            <span data-i18n="aiBtn" class="hidden sm:inline tracking-tight">مساعد AI</span>
+            <span data-i18n="aiBtn" class="hidden sm:inline lg:hidden xl:inline tracking-tight">مساعد AI</span>
             <kbd
-              class="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/[0.06] border border-white/10 text-[9px] font-mono font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors">Alt+A</kbd>
+              class="hidden 2xl:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/[0.06] border border-white/10 text-[9px] font-mono font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors">Alt+A</kbd>
           </button>
 
           <!-- Primary Add Task CTA -->
@@ -331,7 +362,7 @@
       class="lg:hidden border-b border-borderSubtle bg-[#0B0B10]/90 backdrop-blur-md px-3 py-2 space-y-2 shrink-0">
       <div class="flex items-center gap-2">
         <!-- Segmented Control -->
-        <div class="flex-1 grid grid-cols-3 bg-obsidian border border-borderSubtle rounded-xl p-1 gap-0.5">
+        <div class="flex-1 grid grid-cols-5 bg-obsidian border border-borderSubtle rounded-xl p-1 gap-0.5">
           <button onclick="setViewMode('board')" id="mViewBtn-board"
             class="py-1.5 rounded-lg text-[11px] font-semibold transition bg-brand text-white text-center">
             Kanban
@@ -339,6 +370,14 @@
           <button onclick="setViewMode('list')" id="mViewBtn-list" data-i18n="tableTab"
             class="py-1.5 rounded-lg text-[11px] font-semibold transition text-zinc-400 text-center">
             جدول
+          </button>
+          <button onclick="setViewMode('calendar')" id="mViewBtn-calendar" data-i18n="calendarTab"
+            class="py-1.5 rounded-lg text-[11px] font-semibold transition text-zinc-400 text-center truncate">
+            تقويم
+          </button>
+          <button onclick="setViewMode('activity')" id="mViewBtn-activity" data-i18n="activityTab"
+            class="py-1.5 rounded-lg text-[11px] font-semibold transition text-zinc-400 text-center truncate">
+            النشاط
           </button>
           <button onclick="setViewMode('team')" id="mViewBtn-team"
             class="py-1.5 rounded-lg text-[11px] font-semibold transition text-zinc-400 flex items-center justify-center gap-1">
@@ -468,6 +507,10 @@
             إعادة فتح المشروع
           </button>
         </div>
+
+        <!-- Daily Summary -->
+        <div id="dailySummaryCard"
+          class="hidden card-surface border border-brand/20 rounded-2xl p-4 space-y-3 animate-fade-up"></div>
 
         <!-- KPI Overview Row -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
@@ -668,6 +711,20 @@
               </thead>
               <tbody id="listTableBody" class="divide-y divide-white/[0.06] text-xs"></tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- CALENDAR VIEW -->
+        <div id="calendarView" class="hidden space-y-4 pb-10"></div>
+
+        <!-- ACTIVITY FEED VIEW -->
+        <div id="activityView" class="hidden pb-10">
+          <div class="card-surface border border-borderSubtle rounded-2xl p-4 sm:p-5">
+            <div class="mb-2">
+              <h3 data-i18n="activityTitle" class="font-display text-sm sm:text-base font-extrabold text-white">سجل النشاط</h3>
+              <p data-i18n="activityDesc" class="text-[11px] text-zinc-400">كل اللي بيحصل في المشروع لحظة بلحظة</p>
+            </div>
+            <div id="activityList" class="space-y-0.5"></div>
           </div>
         </div>
 
@@ -1026,6 +1083,35 @@
             class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3.5 py-2.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-brand resize-none transition"></textarea>
         </div>
 
+        <!-- Subtasks / checklist -->
+        <div class="rounded-xl border border-borderSubtle bg-obsidian/60 p-3 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span data-i18n="subtasksLabel" class="text-xs font-semibold text-zinc-300">خطوات المهمة</span>
+              <span id="subtaskProgress" class="text-[10px] font-mono tabular-nums text-zinc-400"></span>
+            </div>
+            <button type="button" id="subtaskAiBtn" onclick="generateSubtasksWithAi()"
+              class="ai-cta-btn h-7 px-2.5 rounded-lg text-[11px] font-bold text-zinc-100 flex items-center gap-1.5 disabled:opacity-60">
+              <svg class="w-3.5 h-3.5 text-brand shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2.5c.45 3.65 1.85 5.05 5.5 5.5-3.65.45-5.05 1.85-5.5 5.5-.45-3.65-1.85-5.05-5.5-5.5 3.65-.45 5.05-1.85 5.5-5.5Z" />
+              </svg>
+              <span id="subtaskAiBtnLabel" data-i18n="subtasksAiBtn">قسّمها بالذكاء الاصطناعي</span>
+            </button>
+          </div>
+          <div class="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+            <div id="subtaskProgressBar" class="h-full bg-brand transition-all duration-300" style="width:0%"></div>
+          </div>
+          <div id="subtaskList" class="space-y-0.5"></div>
+          <div class="flex items-center gap-1.5">
+            <input id="subtaskInput" type="text" maxlength="300" data-i18n-placeholder="subtaskPlaceholder"
+              placeholder="أضف خطوة واضغط Enter..."
+              onkeydown="if(event.key==='Enter'){event.preventDefault();addSubtaskFromInput();}"
+              class="flex-1 bg-surface border border-borderSubtle rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand transition" />
+            <button type="button" onclick="addSubtaskFromInput()" data-i18n="subtaskAddBtn"
+              class="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-brand hover:text-white text-zinc-200 text-xs font-semibold transition">إضافة</button>
+          </div>
+        </div>
+
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label data-i18n="thStatus" class="text-xs font-semibold text-zinc-300 block mb-1.5">الحالة</label>
@@ -1065,6 +1151,28 @@
             <label data-i18n="thDueDate" class="text-xs font-semibold text-zinc-300 block mb-1.5">الموعد النهائي</label>
             <input id="fTaskDueDate" type="date"
               class="w-full bg-obsidian border border-borderSubtle rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-brand transition font-mono" />
+          </div>
+        </div>
+
+        <!-- Comments -->
+        <div id="taskCommentsSection" class="hidden rounded-xl border border-borderSubtle bg-obsidian/60 p-3 space-y-2.5">
+          <div class="flex items-center gap-2">
+            <span data-i18n="commentsLabel" class="text-xs font-semibold text-zinc-300">التعليقات</span>
+            <span id="taskCommentsCount" class="text-[10px] font-mono tabular-nums px-1.5 rounded-md bg-white/[0.06] text-zinc-400"></span>
+          </div>
+          <div id="taskCommentsList" class="space-y-2.5 max-h-60 overflow-y-auto pe-1"></div>
+          <div class="relative">
+            <div id="mentionSuggest"
+              class="hidden absolute bottom-full mb-1 start-0 w-56 max-w-full bg-[#16161F] border border-borderSubtle rounded-xl overflow-hidden shadow-2xl z-10"></div>
+            <div class="flex items-end gap-1.5">
+              <textarea id="commentInput" rows="1" maxlength="4000" data-i18n-placeholder="commentPlaceholder"
+                placeholder="اكتب تعليق... استخدم @ للإشارة لعضو"
+                oninput="updateMentionSuggest()" onkeydown="handleCommentKeydown(event)" onclick="updateMentionSuggest()"
+                onblur="setTimeout(hideMentionSuggest, 150)"
+                class="flex-1 bg-surface border border-borderSubtle rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand resize-none transition"></textarea>
+              <button type="button" onclick="postComment()" data-i18n="commentSendBtn"
+                class="btn-primary-gradient px-3.5 py-2 rounded-lg text-white text-xs font-bold transition">إرسال</button>
+            </div>
           </div>
         </div>
 
@@ -1515,6 +1623,7 @@
   <script src="js/render.js"></script>
   <script src="js/projects-tasks.js"></script>
   <script src="js/ai-assistant.js"></script>
+  <script src="js/features.js"></script>
   <script src="js/app.js"></script>
 </body>
 
