@@ -215,8 +215,8 @@ async function leaveProject(projId) {
   const ident = getCurrentIdentity();
   if (ident.id) {
     await db.from('project_members').delete().eq('project_id', projId).eq('user_id', ident.id);
-    await db.from('project_members').delete().eq('id', `${projId}_${ident.id}`);
   }
+  if (typeof _joinAttemptedCodes !== 'undefined') _joinAttemptedCodes.add(projId);
 
   removeLocalAllowedProjectId(projId);
 
@@ -494,6 +494,11 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+// Safely embed a value as a JS string argument inside a double-quoted inline handler attribute.
+function jsArg(val) {
+  return escapeHtml(JSON.stringify(String(val ?? '')));
 }
 
 function getTaskStatus(t) {

@@ -3,35 +3,34 @@ let _dataLoadPending = false;
 let _realtimeDataTimer = null;
 let _realtimeMembersTimer = null;
 
+// Project codes from the URL that we already tried to join this page load,
+// so leaving a project during this visit does not immediately re-join it.
+const _joinAttemptedCodes = new Set();
+
+// Access is enforced by Supabase row-level security: the only projects a
+// user can read are the ones they are a member of.
 async function resolveAccessibleProjectIds() {
-  if (isSharedMode && sharedOnlyProjectId) {
-    return [sharedOnlyProjectId];
-  }
-
-  const idSet = new Set();
-  getLocalAllowedProjectIds().forEach(id => idSet.add(id));
-
-  if (urlProjectParam && activeProjectId === urlProjectParam) {
-    idSet.add(urlProjectParam);
-  }
-
   const ident = getCurrentIdentity();
-  if (ident.id) {
-    try {
-      const { data: myMemberships } = await db
-        .from('project_members')
-        .select('project_id')
-        .eq('user_id', ident.id);
-      if (myMemberships) {
-        myMemberships.forEach(row => {
-          if (row.project_id) idSet.add(row.project_id);
-        });
-      }
-    } catch (err) {
-      console.warn('Could not fetch project_members:', err);
-    }
+  if (!currentUser || !ident.id) return [];
+
+  const { data: myMemberships, error } = await db
+    .from('project_members')
+    .select('project_id')
+    .eq('user_id', ident.id);
+  if (error) throw error;
+
+  const idSet = new Set((myMemberships || []).map(row => row.project_id).filter(Boolean));
+
+  // Opening a share link (?project=CODE) joins that project once.
+  if (urlProjectParam && !idSet.has(urlProjectParam) && !_joinAttemptedCodes.has(urlProjectParam) && hasIdentity()) {
+    _joinAttemptedCodes.add(urlProjectParam);
+    const joined = await joinProjectRpc(urlProjectParam);
+    if (joined) idSet.add(joined.id);
   }
 
+  if (isSharedMode && sharedOnlyProjectId) {
+    return idSet.has(sharedOnlyProjectId) ? [sharedOnlyProjectId] : [];
+  }
   return Array.from(idSet);
 }
 

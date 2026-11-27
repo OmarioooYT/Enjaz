@@ -1,5 +1,21 @@
+// True only for a real (OAuth) account. Guests also have a Supabase
+// session, but it is anonymous.
+function isSignedInUser() {
+  return Boolean(currentUser && !currentUser.is_anonymous);
+}
+
 function hasIdentity() {
-  return Boolean(currentUser || (localStorage.getItem('enjaz_username') || '').trim());
+  return Boolean(isSignedInUser() || (localStorage.getItem('enjaz_username') || '').trim());
+}
+
+// Every visitor needs a Supabase session so row-level security can identify
+// them. Guests get an anonymous session (enable "Allow anonymous sign-ins").
+async function ensureSession() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) return session.user;
+  const { data, error } = await db.auth.signInAnonymously();
+  if (error) throw error;
+  return data.user;
 }
 
 function resolveActiveOAuthProvider(user) {
@@ -44,7 +60,7 @@ function saveProfileOverride(userId, data) {
 }
 
 function getCurrentIdentity() {
-  if (currentUser) {
+  if (isSignedInUser()) {
     const provider = resolveActiveOAuthProvider(currentUser);
     const identities = Array.isArray(currentUser.identities) ? currentUser.identities : [];
     const activeIdent = identities.find(i => i.provider === provider);
@@ -67,7 +83,7 @@ function getCurrentIdentity() {
       provider
     };
   }
-  let guestId = localStorage.getItem('enjaz_guest_id');
+  let guestId = currentUser ? currentUser.id : localStorage.getItem('enjaz_guest_id');
   if (!guestId) {
     guestId = 'guest_' + Math.random().toString(36).substring(2, 10);
     localStorage.setItem('enjaz_guest_id', guestId);
@@ -98,7 +114,7 @@ function renderAuthUI() {
     avatarWrap.textContent = (ident.name || '؟').charAt(0).toUpperCase();
   }
 
-  if (currentUser) {
+  if (isSignedInUser()) {
     nameInput.value = ident.name;
     nameInput.readOnly = true;
     emailDisplay.textContent = ident.email || `${t('connectedVia')} ${ident.provider}`;
@@ -163,10 +179,16 @@ async function signInWithProvider(provider) {
   if (provider === 'google') {
     options.queryParams = { access_type: 'offline', prompt: 'select_account' };
   }
-  const { error } = await db.auth.signInWithOAuth({
-    provider,
-    options
-  });
+  // A guest links the OAuth identity to their anonymous account so they
+  // keep their projects (requires "Allow manual linking" in Supabase).
+  let error = null;
+  if (currentUser && currentUser.is_anonymous && typeof db.auth.linkIdentity === 'function') {
+    ({ error } = await db.auth.linkIdentity({ provider, options }));
+    if (error) console.warn('linkIdentity failed, falling back to sign-in:', error);
+  }
+  if (!currentUser || !currentUser.is_anonymous || error) {
+    ({ error } = await db.auth.signInWithOAuth({ provider, options }));
+  }
   if (error) {
     localStorage.removeItem('enjaz_last_oauth_provider');
     console.error(error);
@@ -178,6 +200,11 @@ async function signOutUser() {
   localStorage.removeItem('enjaz_last_oauth_provider');
   await db.auth.signOut();
   currentUser = null;
+  try {
+    currentUser = await ensureSession();
+  } catch (err) {
+    console.error('Anonymous sign-in failed:', err);
+  }
   renderAuthUI();
   await loadAllData();
   showToast('تم تسجيل الخروج');
@@ -193,34 +220,49 @@ function maybeTriggerTutorial() {
 async function registerCurrentUserInProject(role = 'Member') {
   if (!activeProjectId) return;
   const ident = getCurrentIdentity();
-  if (!ident.name) return;
-
-  addLocalAllowedProjectId(activeProjectId);
 
   const memberId = `${activeProjectId}_${ident.id}`;
   const existing = members.find(m => m.id === memberId);
 
   const desiredRole = ident.role || (existing ? existing.role : role);
-  if (existing && existing.name === ident.name && existing.avatar_url === ident.avatar_url && existing.role === desiredRole && existing.provider === ident.provider) {
+  if (existing) {
+    if (existing.name === ident.name && existing.avatar_url === ident.avatar_url && existing.role === desiredRole && existing.provider === ident.provider) {
+      return;
+    }
+    // Row-level security only allows editing your own member row.
+    const { error } = await db.from('project_members').update({
+      name: ident.name,
+      email: ident.email,
+      avatar_url: ident.avatar_url,
+      provider: ident.provider,
+      role: desiredRole
+    }).eq('id', memberId);
+    if (!error) loadMembersOnly();
     return;
   }
 
-  const payload = {
-    id: memberId,
-    project_id: activeProjectId,
-    user_id: ident.id,
-    name: ident.name,
-    email: ident.email,
-    avatar_url: ident.avatar_url,
-    provider: ident.provider,
-    role: desiredRole,
-    joined_at: existing ? existing.joined_at : Date.now()
-  };
+  const joined = await joinProjectRpc(activeProjectId, desiredRole);
+  if (joined) loadMembersOnly();
+}
 
-  const { error } = await db.from('project_members').upsert([payload]);
-  if (!error) {
-    loadMembersOnly();
+// Membership is created server-side by join_project(); knowing the project
+// code is the invitation. Returns { id, name } or null if the code is unknown.
+async function joinProjectRpc(code, role = 'Member') {
+  const ident = getCurrentIdentity();
+  const { data, error } = await db.rpc('join_project', {
+    p_code: code,
+    p_name: ident.name || (currentLang === 'en' ? 'Member' : 'عضو'),
+    p_email: ident.email || '',
+    p_avatar_url: ident.avatar_url || '',
+    p_provider: ident.provider || '',
+    p_role: role
+  });
+  if (error) {
+    console.warn('join_project failed:', error);
+    return null;
   }
+  const row = Array.isArray(data) ? data[0] : data;
+  return row && row.id ? row : null;
 }
 
 function updateProfileAvatarPreview(avatarUrl, nameStr) {
@@ -325,7 +367,7 @@ async function saveOwnProfile(e) {
       avatar_cleared: avatarCleared
     });
 
-    if (!currentUser) {
+    if (!isSignedInUser()) {
       localStorage.setItem('enjaz_username', newName);
       document.getElementById('userNameInput').value = newName;
     } else {
@@ -369,10 +411,10 @@ const userNameInput = document.getElementById('userNameInput');
 userNameInput.value = localStorage.getItem('enjaz_username') || '';
 let _nameDebounce = null;
 userNameInput.addEventListener('input', (e) => {
-  if (currentUser) return;
+  if (isSignedInUser()) return;
   const v = e.target.value.trim();
   localStorage.setItem('enjaz_username', v);
-  const guestId = localStorage.getItem('enjaz_guest_id');
+  const guestId = currentUser ? currentUser.id : localStorage.getItem('enjaz_guest_id');
   if (guestId) {
     const prev = getSavedProfileOverride(guestId);
     saveProfileOverride(guestId, { ...prev, name: v });
