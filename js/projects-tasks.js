@@ -78,17 +78,21 @@ async function saveTask(e) {
       completed_by: isDone ? user : '',
       completed_at: isDone ? Date.now() : null
     };
-    const { error } = await db.from('tasks').update(updatePayload).eq('id', editId);
+    let { error } = await db.from('tasks').update(updatePayload).eq('id', editId);
     if (error) {
-      await db.from('tasks').update({
+      ({ error } = await db.from('tasks').update({
         title, priority, assignee, category, done: isDone,
         completed_by: isDone ? user : '', completed_at: isDone ? Date.now() : null
-      }).eq('id', editId);
+      }).eq('id', editId));
     }
-    showToast('تم تحديث المهمة بنجاح ✓');
+    if (error) {
+      showToast(currentLang === 'en' ? 'Failed to update task' : 'تعذر تحديث المهمة');
+    } else {
+      showToast(currentLang === 'en' ? 'Task updated ✓' : 'تم تحديث المهمة بنجاح ✓');
+    }
   } else {
     const newTask = {
-      id: 'TSK-' + Date.now(),
+      id: 'TSK-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
       project_id: activeProjectId,
       title, notes, status, priority, assignee, category, due_date,
       done: isDone,
@@ -97,12 +101,16 @@ async function saveTask(e) {
       created_by: user,
       created_at: Date.now()
     };
-    const { error } = await db.from('tasks').insert([newTask]);
+    let { error } = await db.from('tasks').insert([newTask]);
     if (error) {
       const { notes: _n, status: _s, due_date: _d, ...legacyTask } = newTask;
-      await db.from('tasks').insert([legacyTask]);
+      ({ error } = await db.from('tasks').insert([legacyTask]));
     }
-    showToast('تمت إضافة المهمة بنجاح ⚡');
+    if (error) {
+      showToast(currentLang === 'en' ? 'Failed to add task' : 'تعذر إضافة المهمة');
+    } else {
+      showToast(currentLang === 'en' ? 'Task added ⚡' : 'تمت إضافة المهمة بنجاح ⚡');
+    }
   }
   loadAllData();
 }
@@ -119,8 +127,12 @@ async function deleteEditingTask() {
   });
   if (!ok) return;
   closeTaskModal();
-  await db.from('tasks').delete().eq('id', id);
-  showToast(isEn ? 'Task deleted' : 'تم حذف المهمة');
+  const { error } = await db.from('tasks').delete().eq('id', id);
+  if (error) {
+    showToast(isEn ? 'Failed to delete task' : 'تعذر حذف المهمة');
+  } else {
+    showToast(isEn ? 'Task deleted' : 'تم حذف المهمة');
+  }
   loadAllData();
 }
 
@@ -229,16 +241,23 @@ async function deleteProjectById(projId) {
   });
   if (!ok) return;
 
-  await db.from('tasks').delete().eq('project_id', projId);
-  await db.from('project_members').delete().eq('project_id', projId);
-  await db.from('projects').delete().eq('id', projId);
+  const [tasksDel, membersDel] = await Promise.all([
+    db.from('tasks').delete().eq('project_id', projId),
+    db.from('project_members').delete().eq('project_id', projId)
+  ]);
+  const { error: projDelErr } = await db.from('projects').delete().eq('id', projId);
+  if (tasksDel.error || membersDel.error || projDelErr) {
+    showToast(isEn ? 'Failed to delete project' : 'تعذر حذف المشروع');
+    loadAllData();
+    return;
+  }
   removeLocalAllowedProjectId(projId);
 
   if (activeProjectId === projId) {
     activeProjectId = null;
     window.history.replaceState({}, '', window.location.pathname);
   }
-  showToast('تم حذف المشروع');
+  showToast(isEn ? 'Project deleted' : 'تم حذف المشروع');
   loadAllData();
 }
 
@@ -268,13 +287,19 @@ async function joinProjectByCode() {
 
 function copyProjectCode() {
   if (!activeProjectId) return;
-  navigator.clipboard.writeText(activeProjectId);
-  showToast(`تم نسخ الكود: ${activeProjectId}`);
+  copyTextSafe(
+    activeProjectId,
+    currentLang === 'en' ? `Code copied: ${activeProjectId}` : `تم نسخ الكود: ${activeProjectId}`
+  );
 }
 
 function shareCurrentProject() {
-  if (!activeProjectId) return showToast('أنشئ مشروعاً أولاً');
+  if (!activeProjectId) return showToast(currentLang === 'en' ? 'Create a project first' : 'أنشئ مشروعاً أولاً');
   const shareUrl = `${window.location.origin}${window.location.pathname}?project=${activeProjectId}&shared=1`;
-  navigator.clipboard.writeText(shareUrl);
-  showToast(`تم نسخ رابط المشروع (${activeProjectId}) فقط! لن تظهر باقي مشاريعك 🔗`);
+  copyTextSafe(
+    shareUrl,
+    currentLang === 'en'
+      ? `Project link (${activeProjectId}) copied! Other projects stay private 🔗`
+      : `تم نسخ رابط المشروع (${activeProjectId}) فقط! لن تظهر باقي مشاريعك 🔗`
+  );
 }
