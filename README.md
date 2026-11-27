@@ -141,6 +141,9 @@ Any static host works: GitHub Pages, Netlify, Vercel, Cloudflare Pages. With **G
 ├── index.html               Landing page / portfolio
 ├── enjaz.html               The app
 ├── manifest.webmanifest     PWA manifest
+├── robots.txt, sitemap.xml  Search engine crawling
+├── llms.txt, llms-full.txt  Summary of Enjaz for AI assistants (llmstxt.org)
+├── vercel.json              Response headers for the files above
 ├── sw.js                    Service worker (offline cache, notification clicks)
 ├── css/
 │   ├── base.css             App base styles
@@ -202,6 +205,15 @@ All access rules live in the database ([`supabase/schema.sql`](supabase/schema.s
 
 - **App files:** `sw.js` caches them (network-first) and the CDN libraries (stale-while-revalidate).
 - **Data:** the last loaded data is kept in `localStorage`, so the app opens offline, read-only.
+
+### Search engines and AI answers
+
+- **`index.html`** carries the title, description, canonical URL, Open Graph/Twitter preview (`assets/og-image.jpg`) and JSON-LD structured data (`WebSite`, `SoftwareApplication`, `FAQPage`, author).
+- **The FAQ section** on the page shows the same questions and answers as the structured data, so keep the two in sync.
+- **`enjaz.html` is `noindex`**, so private `?project=` share links never appear in search results.
+- **`llms.txt` and `llms-full.txt`** give AI assistants (ChatGPT, Claude, Gemini, Perplexity) an accurate, plain-text description of Enjaz.
+- **`robots.txt`** welcomes their crawlers.
+- **If the domain changes,** update it in `index.html`, `enjaz.html`, `sitemap.xml`, `robots.txt` and both `llms` files.
 
 ## Development guide
 

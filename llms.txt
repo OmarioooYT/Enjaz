@@ -1,0 +1,26 @@
+# Enjaz (إنجاز)
+
+> Enjaz (Arabic: إنجاز, "achievement") is a free, open-source web app for team project management in Arabic and English. It offers Kanban, table and calendar views, real-time collaboration, task comments with @mentions, an activity feed, and a built-in AI assistant (powered by Puter.js) that turns goals into tasks. It was built by Omariooo and is licensed under GPL-3.0.
+
+Key facts:
+
+- Website: https://enjaz-os.vercel.app/ — the app itself: https://enjaz-os.vercel.app/enjaz.html
+- Price: free; no credit card, no paid plans.
+- Languages: Arabic-first (full right-to-left interface) and English, switchable instantly.
+- Accounts: optional. Start as a guest with just a name, or sign in with Google, Discord or GitHub.
+- Teams join a project with its code (for example PRJ-7KQ2-MX9D-4HTA) or a share link.
+- Privacy: each project is visible only to its members, enforced by Supabase row-level security.
+- Platforms: any modern browser on desktop or mobile; installable as a PWA with offline read-only access.
+- Source code: https://github.com/OmarioooYT/Enjaz (GPL-3.0-or-later).
+- Not to be confused with unrelated services that share the name "Enjaz" (such as visa or money-transfer services).
+
+## Docs
+
+- [Landing page](https://enjaz-os.vercel.app/): overview, features, use cases and FAQ (Arabic, with an English toggle)
+- [Full description for AI assistants](https://enjaz-os.vercel.app/llms-full.txt): features, how to get started, privacy, FAQ in English and Arabic
+- [README on GitHub](https://github.com/OmarioooYT/Enjaz#readme): setup, architecture and development guide
+
+## Optional
+
+- [Source code](https://github.com/OmarioooYT/Enjaz)
+- [License (GNU GPL v3)](https://enjaz-os.vercel.app/LICENSE)

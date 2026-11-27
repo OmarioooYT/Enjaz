@@ -11,7 +11,7 @@
 
 const HOME_I18N = {
   ar: {
-    pageTitle: 'إنجاز | رحلة المستخدم وبورتفوليو مشروع إدارة المشاريع بالذكاء الاصطناعي',
+    pageTitle: 'إنجاز Enjaz | إدارة مشاريع الفرق بالذكاء الاصطناعي — مجاني وبالعربي',
     brandName: 'إنجاز',
     brandSub: 'ملف المشروع',
     navOverview: 'نظرة عامة',
@@ -166,6 +166,30 @@ const HOME_I18N = {
     nwMockStep3: "مراجعة مع الفريق",
     nwMockStep4: "التسليم",
 
+    // FAQ
+    faqEyebrow: "الأسئلة الشائعة",
+    faqTitle: "كل ما تريد معرفته عن إنجاز",
+    footerFaq: "الأسئلة الشائعة",
+    footerBy: "من تطوير",
+    faq1Q: "ما هو إنجاز؟",
+    faq1A: "إنجاز (Enjaz) تطبيق ويب مجاني لإدارة مشاريع الفرق باللغتين العربية والإنجليزية. يجمع لوحة كانبان وجدولاً وتقويماً للمهام، وتعاوناً لحظياً بين أعضاء الفريق، ومساعد ذكاء اصطناعي يحوّل الأهداف إلى مهام جاهزة للتنفيذ.",
+    faq2Q: "هل إنجاز مجاني؟",
+    faq2A: "نعم. استخدام إنجاز مجاني بالكامل، وكوده مفتوح المصدر ومنشور على GitHub بترخيص GNU GPL v3.",
+    faq3Q: "هل يدعم إنجاز اللغة العربية؟",
+    faq3A: "نعم. إنجاز مصمم للعربية أولاً بواجهة كاملة من اليمين إلى اليسار (RTL)، ويمكن التبديل إلى الإنجليزية فوراً بضغطة واحدة.",
+    faq4Q: "كيف أضيف فريقي إلى مشروع؟",
+    faq4A: "لكل مشروع كود خاص (مثل PRJ-7KQ2-MX9D-4HTA) ورابط مشاركة. من يدخل بالكود أو الرابط ينضم للمشروع ويرى كل التحديثات لحظياً.",
+    faq5Q: "هل أحتاج إلى إنشاء حساب؟",
+    faq5A: "لا. يمكنك البدء كزائر باسمك فقط، أو تسجيل الدخول بحساب Google أو Discord أو GitHub، وتبقى مشاريعك معك عند التسجيل لاحقاً.",
+    faq6Q: "كيف يعمل الذكاء الاصطناعي في إنجاز؟",
+    faq6A: "يحتوي إنجاز على مساعد ذكي مدمج يعمل عبر Puter.js دون الحاجة لمفتاح API. يفهم سياق المشروع أو المهمة، ويقترح مهاماً تضيفها بضغطة، ويقسّم أي مهمة إلى خطوات، ويكتب ملخصاً يومياً لأولوياتك.",
+    faq7Q: "هل بيانات مشاريعي آمنة وخاصة؟",
+    faq7A: "نعم. كل مشروع محمي بقواعد أمان داخل قاعدة البيانات نفسها (Supabase Row Level Security)، فلا يراه إلا أعضاؤه، وأكواد المشاريع عشوائية ويستحيل تخمينها.",
+    faq8Q: "هل يعمل إنجاز على الموبايل؟",
+    faq8A: "نعم. الواجهة متجاوبة مع كل الشاشات، ويمكن تثبيت إنجاز كتطبيق (PWA) على الموبايل أو الكمبيوتر وتصفح آخر بياناتك حتى دون إنترنت.",
+    faq9Q: "من طوّر إنجاز؟",
+    faq9A: "طوّر إنجاز Omariooo، والكود المصدري متاح على GitHub في المستودع OmarioooYT/Enjaz.",
+
     // Product Use Cases & Value Comparison
     ucEyebrow: 'حالات الاستخدام · لمن إنجاز؟',
     ucTitle: 'مصمّم ليناسب طريقة عمل فريقك مهما كان حجم المشروع',
@@ -200,7 +224,7 @@ const HOME_I18N = {
     footerTop: 'العودة للأعلى'
   },
   en: {
-    pageTitle: 'Enjaz | User Journey & AI Team Project Management Portfolio',
+    pageTitle: 'Enjaz | Free AI-powered team project management in Arabic & English',
     brandName: 'Enjaz',
     brandSub: 'Project Portfolio',
     navOverview: 'Overview',
@@ -354,6 +378,30 @@ const HOME_I18N = {
     nwMockStep2: "Sketch the UI",
     nwMockStep3: "Team review",
     nwMockStep4: "Ship it",
+
+    // FAQ
+    faqEyebrow: "FAQ",
+    faqTitle: "Everything you want to know about Enjaz",
+    footerFaq: "FAQ",
+    footerBy: "Built by",
+    faq1Q: "What is Enjaz?",
+    faq1A: "Enjaz (إنجاز) is a free web app for team project management in Arabic and English. It combines Kanban, table and calendar views, real-time collaboration between teammates, and an AI assistant that turns goals into ready-to-do tasks.",
+    faq2Q: "Is Enjaz free?",
+    faq2A: "Yes. Enjaz is completely free to use, and its source code is open and published on GitHub under the GNU GPL v3 license.",
+    faq3Q: "Does Enjaz support Arabic?",
+    faq3A: "Yes. Enjaz is built Arabic-first with a full right-to-left (RTL) interface, and you can switch to English instantly with one click.",
+    faq4Q: "How do I add my team to a project?",
+    faq4A: "Every project has its own code (like PRJ-7KQ2-MX9D-4HTA) and a share link. Anyone who joins with the code or link becomes a member and sees every update live.",
+    faq5Q: "Do I need to create an account?",
+    faq5A: "No. You can start as a guest with just your name, or sign in with Google, Discord or GitHub, and your projects stay with you when you sign in later.",
+    faq6Q: "How does the AI work in Enjaz?",
+    faq6A: "Enjaz has a built-in AI assistant powered by Puter.js, with no API key needed. It understands the project or task you are viewing, suggests tasks you can add in one click, breaks any task into steps, and writes a daily summary of your priorities.",
+    faq7Q: "Is my project data safe and private?",
+    faq7A: "Yes. Every project is protected by security rules inside the database itself (Supabase Row Level Security), so only its members can see it, and project codes are random and impossible to guess.",
+    faq8Q: "Does Enjaz work on mobile?",
+    faq8A: "Yes. The interface adapts to every screen, and you can install Enjaz as an app (PWA) on your phone or computer and browse your latest data even without internet.",
+    faq9Q: "Who built Enjaz?",
+    faq9A: "Enjaz was built by Omariooo, and the source code is available on GitHub in the OmarioooYT/Enjaz repository.",
 
     // Product Use Cases & Value Comparison
     ucEyebrow: 'USE CASES · WHO IT IS FOR',

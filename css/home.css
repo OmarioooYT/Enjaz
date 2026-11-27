@@ -361,3 +361,11 @@ html[dir="rtl"] #scrollProgressBar {
     transform: none !important;
   }
 }
+
+/* FAQ accordion: hide the default disclosure marker */
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item summary::marker {
+  content: '';
+}
