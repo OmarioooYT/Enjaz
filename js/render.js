@@ -80,13 +80,11 @@ function renderSidebar() {
   }
 
   const activeProj = projects.find(p => p.id === activeProjectId);
-  const codeEl = document.getElementById('headerProjCode');
   const statusEl = document.getElementById('headerProjStatus');
   const mobileStatusEl = document.getElementById('mobileProjStatus');
   const actionsEl = document.getElementById('headerProjectActions');
   const mobileSubEl = document.getElementById('mobileSubHeader');
   const doneBanner = document.getElementById('projectDoneBanner');
-  const delProjHeaderBtn = document.getElementById('headerDeleteProjBtn');
 
   if (activeProj) {
     const st = getProjectStatus(activeProj);
@@ -100,20 +98,14 @@ function renderSidebar() {
     mobileStatusEl.value = st;
     mobileStatusEl.className = `text-[11px] font-bold px-2 py-1.5 rounded-xl border focus:outline-none shrink-0 ${stMeta.selectCls}`;
 
-    if (codeEl) {
-      codeEl.textContent = activeProj.id;
-      codeEl.classList.remove('hidden');
-    }
     actionsEl.classList.remove('hidden');
     mobileSubEl.classList.remove('hidden');
-    if (delProjHeaderBtn) delProjHeaderBtn.classList.toggle('hidden', isSharedMode);
     doneBanner.classList.toggle('hidden', st !== 'done');
     document.getElementById('projDescLine').textContent = activeProj.description || t('noProjDesc');
   } else {
     document.getElementById('headerProjIcon').innerHTML = renderProjectIconHtml('svg:folder', 'w-4 h-4');
     document.getElementById('headerProjTitle').textContent = t('workspace');
     statusEl.className = 'hidden';
-    if (codeEl) codeEl.classList.add('hidden');
     actionsEl.classList.add('hidden');
     mobileSubEl.classList.add('hidden');
     doneBanner.classList.add('hidden');
@@ -149,27 +141,6 @@ function renderWorkspace() {
   projMembers.forEach(m => uniqueNames.add(m.name));
   projTasks.forEach(t => { if (t.assignee) uniqueNames.add(t.assignee.trim()); });
   dl.innerHTML = Array.from(uniqueNames).map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
-
-  // Header mini avatars stack (optional)
-  const stack = document.getElementById('headerTeamStack');
-  if (stack) {
-    stack.innerHTML = '';
-    projMembers.slice(0, 4).forEach(m => {
-      const av = document.createElement('div');
-      av.className = 'w-7 h-7 rounded-full border-2 border-obsidian bg-zinc-800 text-[10px] font-bold text-zinc-200 flex items-center justify-center overflow-hidden';
-      av.title = m.name;
-      av.innerHTML = m.avatar_url
-        ? `<img src="${escapeHtml(m.avatar_url)}" class="w-full h-full object-cover" />`
-        : escapeHtml((m.name || '؟').charAt(0).toUpperCase());
-      stack.appendChild(av);
-    });
-    if (projMembers.length > 4) {
-      const more = document.createElement('div');
-      more.className = 'w-7 h-7 rounded-full border-2 border-obsidian bg-brand/30 text-[10px] font-bold text-brand flex items-center justify-center';
-      more.textContent = `+${projMembers.length - 4}`;
-      stack.appendChild(more);
-    }
-  }
 
   // KPIs with smooth count-up interpolation & one-shot progress sweep
   const total = projTasks.length;
@@ -298,7 +269,7 @@ function renderTeamView(projMembers, projTasks) {
         </div>
         <div class="flex items-center gap-1 shrink-0">
           ${isMe ? `
-            <button type="button" onclick="openEditProfileModal('${escapeHtml(m.user_id)}')"
+            <button type="button" data-action="edit-profile"
               title="${escapeHtml(t('editProfileBtn'))}"
               aria-label="${escapeHtml(t('editProfileBtn'))}"
               class="text-zinc-300 hover:text-brand p-1.5 rounded-lg hover:bg-brand/12 transition">
@@ -307,9 +278,9 @@ function renderTeamView(projMembers, projTasks) {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
             </button>` : ''}
-          <button type="button" onclick="${isMe ? `leaveProject('${activeProjectId}')` : `removeMember('${m.id}')`}"
-            title="${isMe ? t('leaveProjectBtn') : t('removeMemberTitle')}"
-            aria-label="${isMe ? t('leaveProjectBtn') : t('removeMemberTitle')}"
+          <button type="button" data-action="leave-or-remove"
+            title="${escapeHtml(isMe ? t('leaveProjectBtn') : t('removeMemberTitle'))}"
+            aria-label="${escapeHtml(isMe ? t('leaveProjectBtn') : t('removeMemberTitle'))}"
             class="text-zinc-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition">${isMe ? ICONS.leave : ICONS.close}</button>
         </div>
       </div>
@@ -329,11 +300,17 @@ function renderTeamView(projMembers, projTasks) {
         </div>
       </div>
 
-      <button onclick="filterByMemberAndOpenBoard('${escapeHtml(m.name)}')"
+      <button type="button" data-action="filter-member"
         class="w-full py-2.5 rounded-xl bg-obsidian/90 hover:bg-surfaceHover border border-borderSubtle hover:border-brand/35 text-xs font-semibold text-zinc-200 hover:text-brand transition">
         ${t('viewMemberTasks')} ${escapeHtml(m.name)} ${t('inBoardSuffix')}
       </button>
     `;
+    const editBtn = card.querySelector('[data-action="edit-profile"]');
+    if (editBtn) editBtn.onclick = () => openEditProfileModal(m.user_id);
+    const removeBtn = card.querySelector('[data-action="leave-or-remove"]');
+    if (removeBtn) removeBtn.onclick = () => (isMe ? leaveProject(activeProjectId) : removeMember(m.id));
+    const filterBtn = card.querySelector('[data-action="filter-member"]');
+    if (filterBtn) filterBtn.onclick = () => filterByMemberAndOpenBoard(m.name);
     grid.appendChild(card);
   });
 }
@@ -391,8 +368,12 @@ async function removeMember(memberId) {
     variant: 'danger'
   });
   if (!ok) return;
-  await db.from('project_members').delete().eq('id', memberId);
-  showToast(isEn ? 'Member removed' : 'تمت إزالة العضو');
+  const { error } = await db.from('project_members').delete().eq('id', memberId);
+  if (error) {
+    showToast(isEn ? 'Failed to remove member' : 'تعذر إزالة العضو');
+  } else {
+    showToast(isEn ? 'Member removed' : 'تمت إزالة العضو');
+  }
   loadMembersOnly();
 }
 
@@ -590,14 +571,18 @@ async function updateTaskStatus(taskId, newStatus) {
     completed_at: isDone ? Date.now() : null
   };
 
-  const { error } = await db.from('tasks').update(payload).eq('id', taskId);
+  let { error } = await db.from('tasks').update(payload).eq('id', taskId);
   if (error) {
-    await db.from('tasks').update({
+    ({ error } = await db.from('tasks').update({
       done: isDone,
       completed_by: isDone ? user : '',
       completed_at: isDone ? Date.now() : null
-    }).eq('id', taskId);
+    }).eq('id', taskId));
+  }
+  if (error) {
+    showToast(currentLang === 'en' ? 'Failed to update task status' : 'تعذر تحديث حالة المهمة');
+    loadAllData();
   } else if (isDone) {
-    showToast(`عاش يا ${user}! تم إنجاز المهمة ✅`);
+    showToast(currentLang === 'en' ? `Nice work, ${user}! Task completed ✅` : `عاش يا ${user}! تم إنجاز المهمة ✅`);
   }
 }
