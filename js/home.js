@@ -1,3 +1,14 @@
+/**
+ * Enjaz — Landing page (index.html): translations, language switching, the user
+ * journey walkthrough and scroll/tilt effects.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
 const HOME_I18N = {
   ar: {
     pageTitle: 'إنجاز | رحلة المستخدم وبورتفوليو مشروع إدارة المشاريع بالذكاء الاصطناعي',
@@ -102,7 +113,7 @@ const HOME_I18N = {
     featuresTitle: 'كل ما يحتاجه الفريق لإنجاز المشاريع في مكان واحد',
     featuresDesc: 'صُمم إنجاز ليزيل التعقيد ويضع المهام، الفريق، والذكاء الاصطناعي في واجهة واحدة سريعة ومريحة للعين.',
     f1Badge: 'إدارة المهام',
-    f1Title: 'لوحة كانبان وعرض قائمة مع سحب وإفلات سلس',
+    f1Title: 'لوحة كانبان وجدول وتقويم مع سحب وإفلات سلس',
     f1Desc:
       'نظّم المهام عبر حالات (قيد الانتظار، قيد التنفيذ، مكتمل) مع دعم السحب والإفلات، الأولويات، مواعيد الاستحقاق، تنبيهات التأخر، والبحث والفلترة الفورية حسب العضو.',
     f2Badge: 'Puter.js AI',
@@ -117,6 +128,43 @@ const HOME_I18N = {
     f5Desc: 'تسجيل دخول عبر OAuth أو كزائر سريع، تخصيص الصورة الشخصية، متابعة مهام كل عضو، وإضافة أو إزالة أعضاء الفريق بسهولة.',
     f6Title: 'هوية مخصصة لكل مشروع وجولة تعريفية',
     f6Desc: 'اختر من أيقونات متجهة أنيقة أو ارفع شعار مشروعك الخاص، مع جولة تعريفية تفاعلية تساعد الأعضاء الجدد على البدء خلال ثوانٍ.',
+
+    // What's New
+    navNew: "الجديد",
+    nwPill: "جديد",
+    nwEyebrow: "آخر التحديثات",
+    nwTitle: "تعاون أعمق، وتنظيم أذكى، وتجربة أسرع",
+    nwDesc: "إضافات جديدة بتخلّي الفريق كله على نفس الصفحة: نقاش جوه كل مهمة، تقويم للمواعيد، سجل لكل حاجة بتحصل، وإشعارات بتوصلك في وقتها.",
+    nw1Badge: "عرض جديد",
+    nw1Title: "تقويم المهام",
+    nw1Desc: "شوف مواعيد التسليم على تقويم شهري، واسحب أي مهمة ليوم تاني عشان تغيّر موعدها. والمهام المتأخرة بتبان بالأحمر.",
+    nw2Badge: "تعاون",
+    nw2Title: "تعليقات وإشارة @",
+    nw2Desc: "اتناقشوا جوه المهمة نفسها بدل الشات. اكتب @ واختار اسم زميلك، وهيوصله إشعار على طول.",
+    nw3Badge: "بالذكاء الاصطناعي",
+    nw3Title: "خطوات المهمة",
+    nw3Desc: "قسّم أي مهمة لخطوات صغيرة، أو خلّي الذكاء الاصطناعي يقسّمها لك بضغطة. ونسبة التقدم بتظهر على الكارت.",
+    nw4Title: "سجل النشاط",
+    nw4Desc: "كل تغيير في المشروع بيتسجل لحظة بلحظة: مين أضاف، مين نقل، ومين علّق. وقاعدة البيانات بتسجّله بنفسها، فمحدش يقدر يزوّره.",
+    nw5Title: "إشعارات ذكية",
+    nw5Desc: "بيوصلك تنبيه لما حد يسند لك مهمة، أو يعمل لك @، أو يعلّق على مهمتك، حتى لو التطبيق في تاب تاني.",
+    nw6Title: "ملخص يومي",
+    nw6Desc: "أول ما تفتح: مهام النهارده، والمتأخرة، واللي الفريق خلّصها. ومعاه ملخص مكتوب بالذكاء الاصطناعي يقولك تبدأ بإيه.",
+    nw7Title: "سرعة فورية وزرار تراجع",
+    nw7Desc: "أي تعديل بيظهر في لحظته من غير انتظار. ولو مسحت مهمة بالغلط، رجّعها بزرار \"تراجع\".",
+    nw8Title: "تطبيق على موبايلك",
+    nw8Desc: "ثبّت إنجاز كتطبيق على الموبايل أو الكمبيوتر، وتصفّح آخر بياناتك حتى من غير إنترنت.",
+    nw9Title: "مشاريعك محمية",
+    nw9Desc: "مفيش حد يشوف مشروعك إلا أعضاؤه. الحماية متطبّقة جوه قاعدة البيانات نفسها، وكود المشروع بقى صعب يتخمّن.",
+    nwCta: "جرّب المميزات الجديدة",
+    nwMockMonth: "نوفمبر",
+    nwMockMention: "@عمر",
+    nwMockComment1: "راجع التصميم قبل التسليم",
+    nwMockComment2: "تمام، هخلّصه النهارده 👍",
+    nwMockStep1: "جمع المتطلبات",
+    nwMockStep2: "رسم الواجهة",
+    nwMockStep3: "مراجعة مع الفريق",
+    nwMockStep4: "التسليم",
 
     // Product Use Cases & Value Comparison
     ucEyebrow: 'حالات الاستخدام · لمن إنجاز؟',
@@ -254,7 +302,7 @@ const HOME_I18N = {
     featuresTitle: 'Everything a team needs to plan and ship in one workspace',
     featuresDesc: 'Enjaz removes friction by uniting tasks, live collaboration, and context-aware AI inside a crisp, distraction-free dark interface.',
     f1Badge: 'Task Management',
-    f1Title: 'Kanban Board & List Views with Smooth Drag-and-Drop',
+    f1Title: 'Kanban, table & calendar views with smooth drag and drop',
     f1Desc:
       'Track tasks across To Do, In Progress, and Done with drag-and-drop transitions, priority badges, due-date overdue alerts, and instant search or assignee filtering.',
     f2Badge: 'Puter.js AI',
@@ -269,6 +317,43 @@ const HOME_I18N = {
     f5Desc: 'Sign in with OAuth or start immediately as a guest, customize avatars, track member task counts, and manage project members effortlessly.',
     f6Title: 'Custom Project Branding & Guided Onboarding',
     f6Desc: 'Pick from clean vector icons or upload a custom project logo, paired with an interactive walkthrough that gets new members productive in seconds.',
+
+    // What's New
+    navNew: "What's new",
+    nwPill: "NEW",
+    nwEyebrow: "LATEST UPDATES",
+    nwTitle: "Deeper collaboration, smarter planning, faster everything",
+    nwDesc: "New additions that keep the whole team on the same page: discussions inside every task, a calendar for deadlines, a log of everything that happens, and notifications right when they matter.",
+    nw1Badge: "New view",
+    nw1Title: "Task calendar",
+    nw1Desc: "See deadlines on a monthly calendar and drag any task to another day to reschedule it. Overdue work stands out in red.",
+    nw2Badge: "Collaboration",
+    nw2Title: "Comments & @mentions",
+    nw2Desc: "Discuss work inside the task instead of a separate chat. Type @, pick a teammate, and they get notified instantly.",
+    nw3Badge: "AI-powered",
+    nw3Title: "Task checklists",
+    nw3Desc: "Break any task into small steps, or let AI break it down for you in one click. Progress shows right on the card.",
+    nw4Title: "Activity feed",
+    nw4Desc: "Every change is logged live: who added, moved, or commented on what. The database writes the log itself, so nobody can fake it.",
+    nw5Title: "Smart notifications",
+    nw5Desc: "Get alerted when someone assigns you a task, @mentions you, or comments on your work, even when the app is in another tab.",
+    nw6Title: "Daily summary",
+    nw6Desc: "The moment you open the app: today's tasks, what's overdue, and what the team finished, plus an AI-written brief on where to start.",
+    nw7Title: "Instant updates & undo",
+    nw7Desc: "Every change appears immediately, with no waiting. Deleted a task by mistake? Bring it back with Undo.",
+    nw8Title: "Install it on your phone",
+    nw8Desc: "Install Enjaz as an app on your phone or computer, and browse your latest data even without internet.",
+    nw9Title: "Private by design",
+    nw9Desc: "Only project members can see a project. Access rules are enforced inside the database itself, and project codes are now impossible to guess.",
+    nwCta: "Try the new features",
+    nwMockMonth: "November",
+    nwMockMention: "@Omar",
+    nwMockComment1: "please review the design before the deadline",
+    nwMockComment2: "On it, finishing today 👍",
+    nwMockStep1: "Gather requirements",
+    nwMockStep2: "Sketch the UI",
+    nwMockStep3: "Team review",
+    nwMockStep4: "Ship it",
 
     // Product Use Cases & Value Comparison
     ucEyebrow: 'USE CASES · WHO IT IS FOR',
@@ -311,6 +396,12 @@ let activeJourneyStep = 1;
 const prefersReducedMotion = () =>
   Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
+/**
+ * Switches the landing page language and direction and re-translates every
+ * [data-i18n] element.
+ *
+ * @param {'ar'|'en'} lang
+ */
 function applyHomeLanguage(lang) {
   currentLang = lang === 'en' ? 'en' : 'ar';
   localStorage.setItem('enjaz_lang', currentLang);
@@ -335,10 +426,18 @@ function applyHomeLanguage(lang) {
   }
 }
 
+/**
+ * Toggles the landing page between Arabic and English.
+ */
 function toggleHomeLanguage() {
   applyHomeLanguage(currentLang === 'ar' ? 'en' : 'ar');
 }
 
+/**
+ * Switches the tabs of the app preview in the hero section.
+ *
+ * @param {string} tabName
+ */
 function switchPreviewTab(tabName) {
   document.querySelectorAll('[data-preview-tab]').forEach((btn) => {
     btn.setAttribute('aria-selected', btn.getAttribute('data-preview-tab') === tabName ? 'true' : 'false');
@@ -349,6 +448,11 @@ function switchPreviewTab(tabName) {
   });
 }
 
+/**
+ * Shows one step (1-4) of the user-journey walkthrough.
+ *
+ * @param {number} stepNum
+ */
 function selectJourneyStep(stepNum) {
   const clamped = Math.max(1, Math.min(4, Number(stepNum) || 1));
   activeJourneyStep = clamped;
@@ -384,10 +488,20 @@ function selectJourneyStep(stepNum) {
   if (nextBtn) nextBtn.disabled = clamped === 4;
 }
 
+/**
+ * Moves the user-journey walkthrough forward or back.
+ *
+ * @param {number} delta
+ */
 function stepJourney(delta) {
   selectJourneyStep(activeJourneyStep + delta);
 }
 
+/**
+ * Opens or closes the mobile navigation menu.
+ *
+ * @param {boolean} [forceState]
+ */
 function toggleMobileNav(forceState) {
   const menu = document.getElementById('mobileNavMenu');
   const btn = document.getElementById('mobileNavBtn');
@@ -397,6 +511,10 @@ function toggleMobileNav(forceState) {
   btn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
 }
 
+/**
+ * Fades sections in as they scroll into view (skipped when reduced motion is
+ * preferred).
+ */
 function initScrollReveal() {
   const els = document.querySelectorAll('.reveal');
   if (prefersReducedMotion() || !('IntersectionObserver' in window)) {
@@ -419,6 +537,9 @@ function initScrollReveal() {
   els.forEach((el) => observer.observe(el));
 }
 
+/**
+ * Drives the reading-progress bar at the top of the page.
+ */
 function initScrollProgress() {
   const bar = document.getElementById('scrollProgressBar');
   if (!bar) return;
@@ -435,6 +556,9 @@ function initScrollProgress() {
   update();
 }
 
+/**
+ * Adds the 3D tilt effect to [data-tilt] cards on devices with a mouse.
+ */
 function init3DTilt() {
   if (prefersReducedMotion()) return;
   if (window.matchMedia && window.matchMedia('(hover: none)').matches) return;

@@ -1,6 +1,13 @@
-    // =========================================================================
-    // AI CHAT ASSISTANT & TASK DIVIDER (POWERED BY PUTER.JS AI)
-    // =========================================================================
+/**
+ * Enjaz — AI chat assistant and task divider, powered by Puter.js.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
     const AI_STORAGE_KEY_CHATS = 'enjaz_ai_chats_v1';
     const AI_STORAGE_KEY_MODEL = 'enjaz_puter_model_v1';
     const AI_ALLOWED_MODELS = [
@@ -40,6 +47,10 @@
       }
     })();
 
+    /**
+     * Saves AI chat histories to localStorage, keeping the last 40 messages per
+     * chat. If storage is full, saves a text-only copy without attached images.
+     */
     function saveAiChatsToStorage() {
       try {
         Object.keys(aiChats).forEach((k) => {
@@ -64,6 +75,9 @@
       }
     }
 
+    /**
+     * Shows or hides the preview of the image attached to the next AI message.
+     */
     function updateAiImagePreviewUI() {
       const wrap = document.getElementById('aiImagePreviewWrap');
       const imgEl = document.getElementById('aiImagePreviewImg');
@@ -82,6 +96,9 @@
       }
     }
 
+    /**
+     * Removes the image attached to the next AI message.
+     */
     function clearAiPendingImage() {
       aiPendingImage = null;
       const input = document.getElementById('aiImageInput');
@@ -89,6 +106,12 @@
       updateAiImagePreviewUI();
     }
 
+    /**
+     * Validates an image (max 10MB), downsizes it to at most 1024px JPEG and
+     * attaches it to the next AI message.
+     *
+     * @param {File} file
+     */
     function processAiImageFile(file) {
       if (!file) return;
       if (!file.type || !file.type.startsWith('image/')) {
@@ -128,11 +151,21 @@
       reader.readAsDataURL(file);
     }
 
+    /**
+     * Handles an image chosen with the attach button.
+     *
+     * @param {Event} e
+     */
     function handleAiImageSelect(e) {
       const file = e.target && e.target.files && e.target.files[0];
       processAiImageFile(file);
     }
 
+    /**
+     * Attaches an image pasted into the AI chat input.
+     *
+     * @param {ClipboardEvent} e
+     */
     function handleAiInputPaste(e) {
       const items = e.clipboardData && e.clipboardData.items;
       if (!items) return;
@@ -148,10 +181,21 @@
       }
     }
 
+    /**
+     * Storage key for the current chat: one history per project and scope
+     * (whole project or a single task).
+     *
+     * @returns {string}
+     */
     function getAiChatKey() {
       return `${activeProjectId || 'none'}::${aiSelectedScope || 'project'}`;
     }
 
+    /**
+     * The message history of the current chat (created if missing).
+     *
+     * @returns {object[]}
+     */
     function getCurrentAiHistory() {
       const key = getAiChatKey();
       if (!Array.isArray(aiChats[key])) aiChats[key] = [];
@@ -183,6 +227,9 @@
       check: '<svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20 6 9 17l-5-5"/></svg>'
     };
 
+    /**
+     * Shows the selected model in the drawer header and the composer hint.
+     */
     function updateAiHeaderBadge() {
       const badge = document.getElementById('aiHeaderModelBadge');
       if (badge) badge.textContent = AI_MODEL_SHORT_LABELS[aiModel] || aiModel;
@@ -194,6 +241,11 @@
       }
     }
 
+    /**
+     * Opens the AI drawer about the whole project or one task.
+     *
+     * @param {string} [scope='project'] 'project' or a task ID.
+     */
     function openAiChat(scope = 'project') {
       if (!activeProjectId) {
         return showToast(currentLang === 'en' ? 'Create or open a project first' : 'أنشئ أو افتح مشروعاً أولاً');
@@ -219,12 +271,18 @@
       }, 120);
     }
 
+    /**
+     * Opens the AI drawer about the task open in the task modal.
+     */
     function openAiChatForEditingTask() {
       const taskId = document.getElementById('editTaskId').value;
       closeTaskModal();
       openAiChat(taskId || 'project');
     }
 
+    /**
+     * Closes the AI drawer.
+     */
     function closeAiChat() {
       aiDrawerOpen = false;
       const drawer = document.getElementById('aiDrawer');
@@ -235,6 +293,11 @@
       if (headerBtn) headerBtn.setAttribute('aria-expanded', 'false');
     }
 
+    /**
+     * Saves the chosen AI model.
+     *
+     * @param {string} val Model ID.
+     */
     function onAiModelChange(val) {
       if (!AI_ALLOWED_MODELS.includes(val)) return;
       aiModel = val;
@@ -242,11 +305,19 @@
       updateAiHeaderBadge();
     }
 
+    /**
+     * Switches the chat between the whole project and a single task.
+     *
+     * @param {string} val
+     */
     function onAiScopeChange(val) {
       aiSelectedScope = val || 'project';
       renderAiDrawerUI();
     }
 
+    /**
+     * Clears the current chat history (replies still in flight are discarded).
+     */
     function clearCurrentAiChat() {
       const key = getAiChatKey();
       aiChatGen[key] = (aiChatGen[key] || 0) + 1;
@@ -256,6 +327,9 @@
       showToast(t('aiChatClearedToast'));
     }
 
+    /**
+     * Renders the whole AI drawer: model, context, quick actions and messages.
+     */
     function renderAiDrawerUI() {
       updateAiHeaderBadge();
       renderAiContextOptions();
@@ -263,6 +337,12 @@
       renderAiMessages();
     }
 
+    /**
+     * Quick-action prompts for the current scope (project or task) and
+     * language.
+     *
+     * @returns {object[]}
+     */
     function getAiQuickActionsList() {
       const isEn = currentLang === 'en';
       return aiSelectedScope === 'project'
@@ -328,6 +408,9 @@
         ];
     }
 
+    /**
+     * Renders the project/task context selector and the context summary.
+     */
     function renderAiContextOptions() {
       const sel = document.getElementById('aiContextSelect');
       const summary = document.getElementById('aiContextSummary');
@@ -388,6 +471,9 @@
       }
     }
 
+    /**
+     * Renders the quick-action chips above the composer.
+     */
     function renderAiQuickActions() {
       const wrap = document.getElementById('aiQuickActions');
       if (!wrap) return;
@@ -404,6 +490,13 @@
       });
     }
 
+    /**
+     * Builds the system prompt with the project's (or task's) details, members
+     * and tasks, plus the format the AI must use to suggest tasks.
+     *
+     * @param {string} scope 'project' or a task ID.
+     * @returns {string}
+     */
     function buildAiSystemPrompt(scope) {
       const proj = projects.find(p => p.id === activeProjectId);
       const projTasks = tasks.filter(x => x.project_id === activeProjectId);
@@ -481,6 +574,13 @@ Rules for \`enjaz-tasks\`:
 - Only include the \`enjaz-tasks\` block when suggesting/dividing tasks.`;
     }
 
+    /**
+     * Splits an AI reply into markdown and suggested-task blocks
+     * (```enjaz-tasks JSON```), validating each task.
+     *
+     * @param {string} rawText
+     * @returns {object[]}
+     */
     function parseAiMessageSegments(rawText) {
       const segments = [];
       const regex = /```enjaz-tasks\s*([\s\S]*?)```/gi;
@@ -526,6 +626,13 @@ Rules for \`enjaz-tasks\`:
       return segments;
     }
 
+    /**
+     * Renders the small, safe subset of Markdown used in AI replies (headings,
+     * lists, bold, italics, code) to escaped HTML.
+     *
+     * @param {string} md
+     * @returns {string}
+     */
     function renderAiMarkdown(md) {
       if (!md || !md.trim()) return '';
       const codeBlocks = [];
@@ -603,6 +710,12 @@ Rules for \`enjaz-tasks\`:
       return html;
     }
 
+    /**
+     * Copies an AI reply to the clipboard.
+     *
+     * @param {number} msgIdx
+     * @param {HTMLElement} btnEl The copy button (shows a check mark).
+     */
     function copyAiMessage(msgIdx, btnEl) {
       const history = getCurrentAiHistory();
       const msg = history[msgIdx];
@@ -616,6 +729,10 @@ Rules for \`enjaz-tasks\`:
       }).catch(() => { });
     }
 
+    /**
+     * Renders the chat messages, including suggested-task cards with add
+     * buttons.
+     */
     function renderAiMessages() {
       const container = document.getElementById('aiMessages');
       if (!container) return;
@@ -797,6 +914,14 @@ Rules for \`enjaz-tasks\`:
       container.scrollTop = container.scrollHeight;
     }
 
+    /**
+     * Adds AI-suggested tasks to the project: one task, or every task in the
+     * block not added yet.
+     *
+     * @param {number} msgIdx
+     * @param {number} blockIdx
+     * @param {number|null} [singleTaskIdx=null]
+     */
     async function addAiSuggestedTasks(msgIdx, blockIdx, singleTaskIdx = null) {
       if (!activeProjectId) return;
       const history = getCurrentAiHistory();
@@ -872,11 +997,21 @@ Rules for \`enjaz-tasks\`:
       loadAllData();
     }
 
+    /**
+     * Grows the chat input with its content.
+     *
+     * @param {HTMLTextAreaElement} el
+     */
     function autoResizeAiInput(el) {
       el.style.height = 'auto';
       el.style.height = Math.min(el.scrollHeight, 112) + 'px';
     }
 
+    /**
+     * Enter sends the message; Shift+Enter adds a line.
+     *
+     * @param {KeyboardEvent} e
+     */
     function handleAiInputKeydown(e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -884,6 +1019,11 @@ Rules for \`enjaz-tasks\`:
       }
     }
 
+    /**
+     * Disables the composer and shows a spinner while waiting for a reply.
+     *
+     * @param {boolean} sending
+     */
     function setAiSendingState(sending) {
       aiSending = sending;
       const btn = document.getElementById('aiSendBtn');
@@ -894,6 +1034,12 @@ Rules for \`enjaz-tasks\`:
       if (spinIcon) spinIcon.classList.toggle('hidden', !sending);
     }
 
+    /**
+     * Extracts plain text from the different response shapes Puter AI returns.
+     *
+     * @param {*} resp
+     * @returns {string}
+     */
     function extractPuterReplyText(resp) {
       if (!resp) return '';
       if (typeof resp === 'string') return resp.trim();
@@ -908,6 +1054,13 @@ Rules for \`enjaz-tasks\`:
       return '';
     }
 
+    /**
+     * Sends a message (and optional image) to Puter AI with project context,
+     * trying fallback models if the chosen one fails.
+     *
+     * @param {string|null} [presetText=null] Text from a quick action;
+     *   otherwise the input is used.
+     */
     async function sendAiMessage(presetText = null) {
       if (aiSending) return;
       const input = document.getElementById('aiChatInput');

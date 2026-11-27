@@ -1,3 +1,14 @@
+/**
+ * Enjaz — Service worker: offline app shell, cached CDN libraries and notification
+ * clicks.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
 // Enjaz service worker: offline app shell + notification clicks.
 // Bump CACHE_VERSION when the list of shell files changes.
 const CACHE_VERSION = 'enjaz-v2';

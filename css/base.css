@@ -1,3 +1,13 @@
+/*
+ * Enjaz — Base styles for the app (enjaz.html): typography, scrollbars, cards, Kanban.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
 :root {
   color-scheme: dark;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);

@@ -1,3 +1,13 @@
+/**
+ * Enjaz — Tailwind CSS theme (colors and fonts) shared by both pages.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
 tailwind.config = {
   darkMode: 'class',
   theme: {

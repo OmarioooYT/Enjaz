@@ -1,3 +1,9 @@
+-- Copyright (C) 2026 Omariooo
+-- SPDX-License-Identifier: GPL-3.0-or-later
+--
+-- This file is part of Enjaz, free software released under the GNU General
+-- Public License v3.0 or later. See the LICENSE file for details.
+
 -- =====================================================================
 -- Enjaz — Supabase schema, row-level security and helper functions
 -- =====================================================================
@@ -450,3 +456,16 @@ begin
     end if;
   end loop;
 end $$;
+
+-- ---------- API access ------------------------------------------------
+-- Newer Supabase projects do not expose tables created in SQL to the API
+-- automatically, so grant access explicitly. Row-level security above still
+-- decides which rows each user can touch. Every visitor (guests included)
+-- uses the "authenticated" role.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.projects, public.tasks,
+  public.project_members, public.task_comments to authenticated;
+grant select on public.activity_log to authenticated;
+
+-- Make the API pick up new tables, columns and functions immediately.
+notify pgrst, 'reload schema';
