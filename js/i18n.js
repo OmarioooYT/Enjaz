@@ -1,3 +1,13 @@
+/**
+ * Enjaz — Arabic/English UI strings and language switching for the app.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
 const I18N = {
   ar: {
     pageTitle: 'إنجاز | إدارة مشاريع الفريق',
@@ -415,10 +425,24 @@ const I18N = {
   }
 };
 
+/**
+ * Looks up a UI string in the current language, falling back to Arabic and then
+ * to the key itself.
+ *
+ * @param {string} key
+ * @returns {string}
+ */
 function t(key) {
   return (I18N[currentLang] && I18N[currentLang][key]) || (I18N.ar && I18N.ar[key]) || key;
 }
 
+/**
+ * Switches the app language and direction (RTL/LTR), re-translates every
+ * [data-i18n] element and re-renders.
+ *
+ * @param {'ar'|'en'} lang
+ * @param {boolean} [showNotification=false] Animate and show a toast.
+ */
 function applyLanguage(lang, showNotification = false) {
   currentLang = lang === 'en' ? 'en' : 'ar';
   localStorage.setItem('enjaz_lang', currentLang);
@@ -472,12 +496,21 @@ function applyLanguage(lang, showNotification = false) {
   }
 }
 
+/**
+ * Toggles between Arabic and English.
+ */
 function toggleLanguage() {
   applyLanguage(currentLang === 'ar' ? 'en' : 'ar', true);
 }
 
 // Sync desktop & mobile search inputs (debounced workspace render)
 let _searchRenderTimer = null;
+/**
+ * Keeps the desktop and mobile search boxes in sync and re-renders the
+ * workspace (debounced).
+ *
+ * @param {string} val Search text.
+ */
 function syncSearch(val) {
   searchQuery = val || '';
   const d = document.getElementById('searchInput');

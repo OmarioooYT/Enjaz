@@ -1,7 +1,24 @@
+/**
+ * Enjaz — Shared UI helpers: modals, toasts, confirmation dialog, project icons, the
+ * tutorial and small formatting utilities.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
 const prefersReducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let lastCompletedTaskId = null;
 let lastKpiState = { total: 0, members: 0, percent: 0, urgent: 0 };
 
+/**
+ * Shows a modal (or bottom sheet) with its entrance animation.
+ *
+ * @param {string} modalId
+ * @param {boolean} [isSheet=false]
+ */
 function animateModalOpen(modalId, isSheet = false) {
   const m = document.getElementById(modalId);
   if (!m) return;
@@ -14,6 +31,12 @@ function animateModalOpen(modalId, isSheet = false) {
   }
 }
 
+/**
+ * Hides a modal (or bottom sheet) after its exit animation.
+ *
+ * @param {string} modalId
+ * @param {boolean} [isSheet=false]
+ */
 function animateModalClose(modalId, isSheet = false) {
   const m = document.getElementById(modalId);
   if (!m || m.classList.contains('hidden')) return;
@@ -37,6 +60,15 @@ function animateModalClose(modalId, isSheet = false) {
   }, 160);
 }
 
+/**
+ * Counts a number up or down in an element (skipped when reduced motion is
+ * preferred).
+ *
+ * @param {string} elId
+ * @param {number} fromVal
+ * @param {number} toVal
+ * @param {string} [suffix=''] Appended text, e.g. '%'.
+ */
 function animateNumber(elId, fromVal, toVal, suffix = '') {
   const el = document.getElementById(elId);
   if (!el) return;
@@ -66,6 +98,9 @@ document.addEventListener('pointermove', (e) => {
   card.style.setProperty('--my', `${e.clientY - rect.top}px`);
 }, { passive: true });
 
+/**
+ * Shows or hides the search row on mobile.
+ */
 function toggleMobileSearch() {
   const row = document.getElementById('mobileSearchRow');
   const btn = document.getElementById('mobileSearchToggleBtn');
@@ -83,6 +118,9 @@ function toggleMobileSearch() {
   }
 }
 
+/**
+ * Opens the project options menu (bottom sheet on mobile, modal on desktop).
+ */
 function openMobileProjectMenu() {
   if (!activeProjectId) return;
   const p = projects.find(x => x.id === activeProjectId);
@@ -96,11 +134,19 @@ function openMobileProjectMenu() {
   animateModalOpen('mobileProjectMenu', true);
 }
 
+/**
+ * Closes the project options menu.
+ */
 function closeMobileProjectMenu() {
   animateModalClose('mobileProjectMenu', true);
 }
 
-// LocalStorage tracker
+/**
+ * Reads the list of projects this browser has opened. Only a convenience:
+ * access itself is enforced by the database.
+ *
+ * @returns {string[]}
+ */
 function getLocalAllowedProjectIds() {
   try {
     const raw = localStorage.getItem('enjaz_my_projects');
@@ -111,6 +157,11 @@ function getLocalAllowedProjectIds() {
   }
 }
 
+/**
+ * Remembers a project ID in this browser.
+ *
+ * @param {string} projId
+ */
 function addLocalAllowedProjectId(projId) {
   if (!projId) return;
   const list = getLocalAllowedProjectIds();
@@ -120,11 +171,19 @@ function addLocalAllowedProjectId(projId) {
   }
 }
 
+/**
+ * Forgets a project ID in this browser.
+ *
+ * @param {string} projId
+ */
 function removeLocalAllowedProjectId(projId) {
   const list = getLocalAllowedProjectIds().filter(id => id !== projId);
   localStorage.setItem('enjaz_my_projects', JSON.stringify(list));
 }
 
+/**
+ * Leaves shared-link mode and shows all of the user's projects.
+ */
 function exitSharedMode() {
   isSharedMode = false;
   sharedOnlyProjectId = null;
@@ -136,6 +195,17 @@ function exitSharedMode() {
 let _confirmResolver = null;
 let _confirmPrevFocus = null;
 
+/**
+ * Shows the styled confirmation dialog.
+ *
+ * @param {object} [options]
+ * @param {string} [options.title]
+ * @param {string} [options.message]
+ * @param {string} [options.confirmText]
+ * @param {string} [options.cancelText]
+ * @param {'danger'|'warning'} [options.variant='danger']
+ * @returns {Promise<boolean>} True if the user confirmed.
+ */
 function showConfirmDialog({
   title = '',
   message = '',
@@ -180,6 +250,11 @@ function showConfirmDialog({
   });
 }
 
+/**
+ * Closes the confirmation dialog and resolves its promise.
+ *
+ * @param {boolean} accepted
+ */
 function resolveConfirmDialog(accepted) {
   const modal = document.getElementById('confirmModal');
   if (modal) {
@@ -197,6 +272,12 @@ function resolveConfirmDialog(accepted) {
   }
 }
 
+/**
+ * Leaves a project after confirmation (removes the user's own member row; the
+ * project stays for others).
+ *
+ * @param {string} projId
+ */
 async function leaveProject(projId) {
   if (!projId) return;
   const p = projects.find(x => x.id === projId);
@@ -275,10 +356,24 @@ const LEGACY_EMOJI_TO_ICON = {
   '📂': 'folder'
 };
 
+/**
+ * Whether a project icon value is an image (data or http URL) rather than a
+ * built-in SVG key.
+ *
+ * @param {string} val
+ * @returns {boolean}
+ */
 function isImageIcon(val) {
   return typeof val === 'string' && (val.startsWith('data:image/') || val.startsWith('http://') || val.startsWith('https://'));
 }
 
+/**
+ * Normalizes a stored project icon to an image URL or a known 'svg:<key>' value
+ * (legacy emoji icons are mapped).
+ *
+ * @param {string} val
+ * @returns {string}
+ */
 function normalizeProjectIcon(val) {
   if (!val) return 'svg:rocket';
   if (isImageIcon(val)) return val;
@@ -290,6 +385,13 @@ function normalizeProjectIcon(val) {
   return 'svg:folder';
 }
 
+/**
+ * Returns the HTML for a project icon.
+ *
+ * @param {string} iconVal
+ * @param {string} [sizeCls='w-4 h-4'] Tailwind size classes for SVG icons.
+ * @returns {string}
+ */
 function renderProjectIconHtml(iconVal, sizeCls = 'w-4 h-4') {
   const normalized = normalizeProjectIcon(iconVal);
   if (isImageIcon(normalized)) {
@@ -300,6 +402,11 @@ function renderProjectIconHtml(iconVal, sizeCls = 'w-4 h-4') {
   return `<svg class="${sizeCls} text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">${item.path}</svg>`;
 }
 
+/**
+ * Renders the icon grid and logo preview in the project modal.
+ *
+ * @param {string} selectedVal
+ */
 function renderProjectIconPicker(selectedVal) {
   const normalized = normalizeProjectIcon(selectedVal);
   const isImg = isImageIcon(normalized);
@@ -332,16 +439,30 @@ function renderProjectIconPicker(selectedVal) {
   }
 }
 
+/**
+ * Selects an icon in the project modal.
+ *
+ * @param {string} iconVal
+ */
 function selectProjectIcon(iconVal) {
   const fileInput = document.getElementById('pLogoFile');
   if (fileInput) fileInput.value = '';
   renderProjectIconPicker(iconVal);
 }
 
+/**
+ * Removes an uploaded project logo and goes back to the default icon.
+ */
 function clearUploadedLogo() {
   selectProjectIcon('svg:rocket');
 }
 
+/**
+ * Center-crops and downsizes an uploaded project logo to 128x128 (WebP, PNG
+ * fallback).
+ *
+ * @param {Event} e File input change event.
+ */
 function handleProjectLogoUpload(e) {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
@@ -383,6 +504,12 @@ function handleProjectLogoUpload(e) {
   reader.readAsDataURL(file);
 }
 
+/**
+ * Translated label for a project status.
+ *
+ * @param {string} statusKey
+ * @returns {string}
+ */
 function getProjectStatusLabel(statusKey) {
   const map = {
     todo: t('statusTodo'),
@@ -393,6 +520,11 @@ function getProjectStatusLabel(statusKey) {
   return map[statusKey] || statusKey;
 }
 
+/**
+ * Tutorial steps in the current language.
+ *
+ * @returns {object[]}
+ */
 function getTutorialSteps() {
   if (currentLang === 'en') {
     return [
@@ -451,6 +583,12 @@ const PROJECT_STATUS_META = {
   }
 };
 
+/**
+ * A project's status, defaulting to 'in_progress' for unknown values.
+ *
+ * @param {object} p Project.
+ * @returns {string}
+ */
 function getProjectStatus(p) {
   if (p && p.status && PROJECT_STATUS_META[p.status]) return p.status;
   return 'in_progress';
@@ -486,6 +624,12 @@ const TUTORIAL_STEPS = [
   }
 ];
 
+/**
+ * Escapes text for safe use in HTML content and attributes.
+ *
+ * @param {*} str
+ * @returns {string}
+ */
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -496,16 +640,35 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-// Safely embed a value as a JS string argument inside a double-quoted inline handler attribute.
+/**
+ * Safely embeds a value as a JavaScript string argument inside a double-quoted
+ * inline handler attribute (e.g. onclick="fn(${jsArg(id)})").
+ *
+ * @param {*} val
+ * @returns {string}
+ */
 function jsArg(val) {
   return escapeHtml(JSON.stringify(String(val ?? '')));
 }
 
+/**
+ * A task's status, falling back to the legacy 'done' flag.
+ *
+ * @param {object} t Task.
+ * @returns {'todo'|'in_progress'|'done'}
+ */
 function getTaskStatus(t) {
   if (t.status && ['todo', 'in_progress', 'done'].includes(t.status)) return t.status;
   return t.done ? 'done' : 'todo';
 }
 
+/**
+ * Whether a due date is before today and the task is not done.
+ *
+ * @param {string|null} dateStr YYYY-MM-DD.
+ * @param {string} status
+ * @returns {boolean}
+ */
 function isOverdue(dateStr, status) {
   if (!dateStr || status === 'done') return false;
   const now = new Date();
@@ -515,6 +678,14 @@ function isOverdue(dateStr, status) {
   return dateStr < `${y}-${m}-${d}`;
 }
 
+/**
+ * Copies text to the clipboard, with a fallback for browsers without the
+ * Clipboard API.
+ *
+ * @param {string} text
+ * @param {string} [successMsg] Toast shown on success.
+ * @returns {Promise<boolean>}
+ */
 async function copyTextSafe(text, successMsg) {
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -544,7 +715,15 @@ async function copyTextSafe(text, successMsg) {
   }
 }
 
-// showToast(message, { actionLabel, onAction, duration })
+/**
+ * Shows a toast message, optionally with an action button (e.g. Undo).
+ *
+ * @param {string} msg
+ * @param {object} [opts]
+ * @param {string} [opts.actionLabel] Button text.
+ * @param {Function} [opts.onAction] Called when the button is clicked.
+ * @param {number} [opts.duration=3200] Milliseconds before hiding.
+ */
 function showToast(msg, opts = {}) {
   const t = document.getElementById('toast');
   const { actionLabel = '', onAction = null, duration = 3200 } = opts || {};
@@ -583,6 +762,11 @@ function showToast(msg, opts = {}) {
   }, duration);
 }
 
+/**
+ * Opens or closes the sidebar on mobile.
+ *
+ * @param {boolean} open
+ */
 function toggleMobileSidebar(open) {
   const sb = document.getElementById('sidebar');
   const bd = document.getElementById('sidebarBackdrop');
@@ -600,17 +784,28 @@ function toggleMobileSidebar(open) {
   }
 }
 
+/**
+ * Opens the onboarding tutorial at a given step.
+ *
+ * @param {number} [startStep=0]
+ */
 function openTutorialModal(startStep = 0) {
   tutorialStep = startStep;
   renderTutorialStep();
   animateModalOpen('tutorialModal');
 }
 
+/**
+ * Closes the tutorial and remembers that it was seen.
+ */
 function skipTutorial() {
   localStorage.setItem('enjaz_tutorial_done', '1');
   animateModalClose('tutorialModal');
 }
 
+/**
+ * Renders the current tutorial step.
+ */
 function renderTutorialStep() {
   const steps = getTutorialSteps();
   const step = steps[tutorialStep];
@@ -644,6 +839,9 @@ function renderTutorialStep() {
   nextBtn.textContent = tutorialStep === steps.length - 1 ? t('startFirstProject') : t('nextBtn');
 }
 
+/**
+ * Goes to the previous tutorial step.
+ */
 function prevTutorialStep() {
   if (tutorialStep > 0) {
     tutorialStep--;
@@ -651,6 +849,9 @@ function prevTutorialStep() {
   }
 }
 
+/**
+ * Goes to the next tutorial step, or finishes the tutorial.
+ */
 function nextTutorialStep() {
   if (tutorialStep < TUTORIAL_STEPS.length - 1) {
     tutorialStep++;

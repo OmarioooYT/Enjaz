@@ -1,9 +1,14 @@
-// =========================================================================
-// Collaboration & UX features:
-//   undo delete, subtasks (+AI), comments with @mentions, activity feed,
-//   browser notifications, calendar view, daily summary (+AI),
-//   offline snapshot + PWA install.
-// =========================================================================
+/**
+ * Enjaz — Collaboration and UX features: undo delete, task checklists (+AI), comments
+ * with @mentions, activity feed, notifications, calendar view, daily summary
+ * (+AI), offline snapshot and PWA install.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
 
 Object.assign(I18N.ar, {
   undoBtn: 'تراجع',
@@ -177,24 +182,55 @@ Object.assign(I18N.en, {
 
 // ---------- Small helpers ------------------------------------------------
 
+/**
+ * Replaces {name} placeholders in a translated string.
+ *
+ * @param {string} str
+ * @param {Object<string, string>} values
+ * @returns {string}
+ */
 function fillTemplate(str, values) {
   return String(str).replace(/\{(\w+)\}/g, (_, k) => (values[k] !== undefined ? values[k] : ''));
 }
 
+/**
+ * Formats a date as local YYYY-MM-DD.
+ *
+ * @param {Date} d
+ * @returns {string}
+ */
 function dateToStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/**
+ * Today's date as local YYYY-MM-DD.
+ *
+ * @returns {string}
+ */
 function todayStr() {
   return dateToStr(new Date());
 }
 
+/**
+ * Case- and space-insensitive name comparison (empty names never match).
+ *
+ * @param {string} a
+ * @param {string} b
+ * @returns {boolean}
+ */
 function sameName(a, b) {
   const x = (a || '').trim().toLowerCase();
   const y = (b || '').trim().toLowerCase();
   return Boolean(x) && x === y;
 }
 
+/**
+ * Short relative time such as "5m ago".
+ *
+ * @param {number} ms Timestamp in milliseconds.
+ * @returns {string}
+ */
 function timeAgo(ms) {
   const diff = Math.max(0, Date.now() - Number(ms || 0));
   const min = Math.floor(diff / 60000);
@@ -205,14 +241,30 @@ function timeAgo(ms) {
   return fillTemplate(t('daysAgo'), { n: Math.floor(hrs / 24) });
 }
 
+/**
+ * Locale used for dates in the current language.
+ *
+ * @returns {string}
+ */
 function uiLocale() {
   return currentLang === 'en' ? 'en-US' : 'ar-EG';
 }
 
+/**
+ * Short translated label for a task status.
+ *
+ * @param {string} st
+ * @returns {string}
+ */
 function statusShortLabel(st) {
   return st === 'done' ? t('statusDoneShort') : st === 'in_progress' ? t('statusInProgressShort') : t('statusTodoShort');
 }
 
+/**
+ * Names of the active project's members and assignees, used for @mentions.
+ *
+ * @returns {string[]}
+ */
 function projectMemberNames() {
   const names = new Set();
   members.filter(m => m.project_id === activeProjectId).forEach(m => { if (m.name) names.add(m.name.trim()); });
@@ -220,13 +272,25 @@ function projectMemberNames() {
   return Array.from(names).filter(Boolean);
 }
 
+/**
+ * Generates a unique ID such as TSK-1700000000000-a1b2c3d4e5f6.
+ *
+ * @param {string} prefix
+ * @returns {string}
+ */
 function randomId(prefix) {
   const bytes = new Uint8Array(6);
   crypto.getRandomValues(bytes);
   return `${prefix}-${Date.now()}-${Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')}`;
 }
 
-// Turns a Supabase/PostgREST error into a short, actionable reason.
+/**
+ * Turns a Supabase/PostgREST error into a short, actionable reason for the
+ * user.
+ *
+ * @param {object} error
+ * @returns {string}
+ */
 function describeDbError(error) {
   if (!error) return '';
   const code = error.code || '';
@@ -249,7 +313,15 @@ function describeDbError(error) {
   return `${msg}${code ? ` (${code})` : ''}`;
 }
 
-// Calls Puter AI with the user's chosen model, falling back like the chat does.
+/**
+ * Sends a one-off prompt to Puter AI using the user's chosen model, falling
+ * back through other models like the chat does.
+ *
+ * @param {string} systemPrompt
+ * @param {string} userPrompt
+ * @returns {Promise<string>} The reply text.
+ * @throws When every model fails or the AI library is unavailable.
+ */
 async function aiQuickText(systemPrompt, userPrompt) {
   if (!window.puter || !window.puter.ai || typeof window.puter.ai.chat !== 'function') {
     throw new Error(t('aiUnavailable'));
@@ -283,6 +355,17 @@ async function aiQuickText(systemPrompt, userPrompt) {
 const pendingTaskWrites = new Map();    // taskId -> local task object
 const pendingCommentWrites = new Map(); // commentId -> local comment
 
+/**
+ * Runs a database write while marking the local object as pending, so a
+ * background refresh that started earlier does not overwrite it with stale
+ * data. Schedules one more refresh if a load was in flight.
+ *
+ * @param {Map} map pendingTaskWrites or pendingCommentWrites.
+ * @param {string} id
+ * @param {object|null} obj Local copy (null for a pending delete).
+ * @param {Function} fn Performs the write.
+ * @returns {Promise<*>} Whatever fn returns.
+ */
 async function trackPendingWrite(map, id, obj, fn) {
   map.set(id, obj);
   try {
@@ -293,6 +376,14 @@ async function trackPendingWrite(map, id, obj, fn) {
   }
 }
 
+/**
+ * Applies local pending writes on top of freshly fetched tasks and comments
+ * (mutates the arrays).
+ *
+ * @param {object[]} fetchedTasks
+ * @param {object[]} fetchedComments
+ * @param {string[]} projectIds Loaded project IDs.
+ */
 function mergePendingWrites(fetchedTasks, fetchedComments, projectIds) {
   pendingTaskWrites.forEach((local, id) => {
     const i = fetchedTasks.findIndex(x => x.id === id);
@@ -316,6 +407,12 @@ function mergePendingWrites(fetchedTasks, fetchedComments, projectIds) {
 const TASK_UNDO_MS = 5000;
 const pendingTaskDeletes = new Map(); // taskId -> { task, timer, committing }
 
+/**
+ * Removes a task from the screen immediately and deletes it from the database
+ * after the undo window, unless Undo is pressed.
+ *
+ * @param {string} taskId
+ */
 function deleteTaskWithUndo(taskId) {
   const idx = tasks.findIndex(x => x.id === taskId);
   if (idx < 0) return;
@@ -332,6 +429,11 @@ function deleteTaskWithUndo(taskId) {
   });
 }
 
+/**
+ * Puts a task back into the local list and re-renders.
+ *
+ * @param {object} task
+ */
 function restoreTaskLocally(task) {
   if (!tasks.some(x => x.id === task.id)) {
     tasks.push(task);
@@ -340,6 +442,11 @@ function restoreTaskLocally(task) {
   renderAll();
 }
 
+/**
+ * Cancels a pending delete and restores the task.
+ *
+ * @param {string} taskId
+ */
 function undoTaskDelete(taskId) {
   const pending = pendingTaskDeletes.get(taskId);
   if (!pending || pending.committing) return;
@@ -349,6 +456,11 @@ function undoTaskDelete(taskId) {
   showToast(t('taskRestored'));
 }
 
+/**
+ * Deletes a task from the database now; restores it locally if that fails.
+ *
+ * @param {string} taskId
+ */
 async function commitTaskDelete(taskId) {
   const pending = pendingTaskDeletes.get(taskId);
   if (!pending || pending.committing) return;
@@ -362,7 +474,10 @@ async function commitTaskDelete(taskId) {
   }
 }
 
-// Commit pending deletes when the user leaves, so "deleted" really is deleted.
+/**
+ * Commits every pending delete immediately (when the page is hidden or closed),
+ * so deleted really means deleted.
+ */
 function flushPendingTaskDeletes() {
   Array.from(pendingTaskDeletes.keys()).forEach(id => commitTaskDelete(id));
 }
@@ -377,6 +492,12 @@ window.addEventListener('pagehide', flushPendingTaskDeletes);
 
 let modalSubtasks = [];
 
+/**
+ * Validates a checklist value from the database (array or JSON string).
+ *
+ * @param {*} val
+ * @returns {{id: string, text: string, done: boolean}[]}
+ */
 function normalizeSubtasks(val) {
   let arr = val;
   if (typeof arr === 'string') {
@@ -388,10 +509,20 @@ function normalizeSubtasks(val) {
     .map(x => ({ id: String(x.id || randomId('st')), text: x.text.trim().slice(0, 300), done: Boolean(x.done) }));
 }
 
+/**
+ * A copy of the checklist being edited in the task modal.
+ *
+ * @returns {object[]}
+ */
 function getModalSubtasks() {
   return modalSubtasks.map(s => ({ ...s }));
 }
 
+/**
+ * Loads a task's checklist into the task modal.
+ *
+ * @param {object|null} task
+ */
 function initModalSubtasks(task) {
   modalSubtasks = task ? normalizeSubtasks(task.subtasks) : [];
   const input = document.getElementById('subtaskInput');
@@ -399,6 +530,9 @@ function initModalSubtasks(task) {
   renderModalSubtasks();
 }
 
+/**
+ * Renders the checklist and its progress bar in the task modal.
+ */
 function renderModalSubtasks() {
   const list = document.getElementById('subtaskList');
   const progress = document.getElementById('subtaskProgress');
@@ -428,6 +562,10 @@ function renderModalSubtasks() {
     </div>`).join('');
 }
 
+/**
+ * Saves the modal checklist optimistically for an existing task (new tasks save
+ * it with the form).
+ */
 async function persistModalSubtasks() {
   renderModalSubtasks();
   const editId = document.getElementById('editTaskId').value;
@@ -451,6 +589,11 @@ async function persistModalSubtasks() {
   }
 }
 
+/**
+ * Adds a step to the modal checklist.
+ *
+ * @param {string} text
+ */
 function addModalSubtask(text) {
   const clean = (text || '').trim();
   if (!clean) return;
@@ -458,6 +601,9 @@ function addModalSubtask(text) {
   persistModalSubtasks();
 }
 
+/**
+ * Adds the step typed in the checklist input.
+ */
 function addSubtaskFromInput() {
   const input = document.getElementById('subtaskInput');
   if (!input) return;
@@ -466,6 +612,10 @@ function addSubtaskFromInput() {
   input.focus();
 }
 
+/**
+ * Asks the AI to break the task into 3 to 7 steps and appends them to the
+ * checklist.
+ */
 async function generateSubtasksWithAi() {
   const title = document.getElementById('fTaskTitle').value.trim();
   const notes = document.getElementById('fTaskNotes').value.trim();
@@ -518,7 +668,13 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Small meta row (checklist progress + comment count) shown on task cards.
+/**
+ * HTML for the checklist progress and comment count shown on task cards (empty
+ * when there are neither).
+ *
+ * @param {object} task
+ * @returns {string}
+ */
 function renderTaskMetaRow(task) {
   const subs = normalizeSubtasks(task.subtasks);
   const done = subs.filter(s => s.done).length;
@@ -545,6 +701,12 @@ function renderTaskMetaRow(task) {
 // 3) COMMENTS WITH @MENTIONS
 // =========================================================================
 
+/**
+ * Escapes a comment and highlights @mentions of project members.
+ *
+ * @param {string} body
+ * @returns {string} HTML.
+ */
 function formatCommentBody(body) {
   let html = escapeHtml(body);
   const names = projectMemberNames().sort((a, b) => b.length - a.length);
@@ -555,10 +717,19 @@ function formatCommentBody(body) {
   return html.replace(/\n/g, '<br>');
 }
 
+/**
+ * Project member names mentioned with @ in a comment.
+ *
+ * @param {string} body
+ * @returns {string[]}
+ */
 function extractMentions(body) {
   return projectMemberNames().filter(name => body.includes('@' + name));
 }
 
+/**
+ * Renders the comment thread in the task modal (hidden for new tasks).
+ */
 function renderModalComments() {
   const section = document.getElementById('taskCommentsSection');
   const list = document.getElementById('taskCommentsList');
@@ -603,6 +774,10 @@ function renderModalComments() {
   list.scrollTop = list.scrollHeight;
 }
 
+/**
+ * Posts the typed comment optimistically; restores the text and shows the
+ * reason if saving fails.
+ */
 async function postComment() {
   const input = document.getElementById('commentInput');
   const taskId = document.getElementById('editTaskId').value;
@@ -640,6 +815,11 @@ async function postComment() {
   }
 }
 
+/**
+ * Deletes one of the user's own comments optimistically.
+ *
+ * @param {string} commentId
+ */
 async function deleteComment(commentId) {
   const c = comments.find(x => x.id === commentId);
   if (!c) return;
@@ -669,18 +849,31 @@ document.addEventListener('click', (e) => {
 // ---- @mention autocomplete ----
 let _mentionMatches = [];
 
+/**
+ * The text typed after an @ just before the cursor, or null if the cursor is
+ * not in a mention.
+ *
+ * @param {HTMLTextAreaElement} input
+ * @returns {string|null}
+ */
 function currentMentionQuery(input) {
   const upto = input.value.slice(0, input.selectionStart);
   const m = upto.match(/@([^\s@]*)$/);
   return m ? m[1] : null;
 }
 
+/**
+ * Hides the @mention suggestion list.
+ */
 function hideMentionSuggest() {
   _mentionMatches = [];
   const box = document.getElementById('mentionSuggest');
   if (box) box.classList.add('hidden');
 }
 
+/**
+ * Shows matching member names while an @mention is being typed.
+ */
 function updateMentionSuggest() {
   const input = document.getElementById('commentInput');
   const box = document.getElementById('mentionSuggest');
@@ -699,6 +892,11 @@ function updateMentionSuggest() {
   box.classList.remove('hidden');
 }
 
+/**
+ * Replaces the @mention being typed with the chosen name.
+ *
+ * @param {string} name
+ */
 function insertMention(name) {
   const input = document.getElementById('commentInput');
   if (!input) return;
@@ -710,6 +908,12 @@ function insertMention(name) {
   hideMentionSuggest();
 }
 
+/**
+ * Comment box keys: Enter sends (Shift+Enter adds a line); Enter/Tab picks a
+ * suggestion; Escape closes the suggestions.
+ *
+ * @param {KeyboardEvent} e
+ */
 function handleCommentKeydown(e) {
   const suggestOpen = _mentionMatches.length > 0;
   if (e.key === 'Escape' && suggestOpen) {
@@ -735,6 +939,12 @@ function handleCommentKeydown(e) {
 
 let activityAvailable = true;
 
+/**
+ * Builds the HTML sentence for one activity-log entry.
+ *
+ * @param {object} a activity_log row.
+ * @returns {string}
+ */
 function describeActivity(a) {
   const d = a.details || {};
   const b = (txt) => `<span class="font-bold text-zinc-100">${escapeHtml(txt)}</span>`;
@@ -771,6 +981,9 @@ const ACTIVITY_ICONS = {
   member_joined: { cls: 'bg-fuchsia-500/15 text-fuchsia-300', path: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6' }
 };
 
+/**
+ * Renders the activity feed grouped by day.
+ */
 function renderActivityView() {
   const list = document.getElementById('activityList');
   if (!list) return;
@@ -823,14 +1036,27 @@ document.addEventListener('click', (e) => {
 
 const NOTIFY_PREF_KEY = 'enjaz_notify_enabled';
 
+/**
+ * Whether the browser supports notifications.
+ *
+ * @returns {boolean}
+ */
 function notificationsSupported() {
   return 'Notification' in window;
 }
 
+/**
+ * Whether the user granted permission and has not muted notifications.
+ *
+ * @returns {boolean}
+ */
 function notificationsEnabled() {
   return notificationsSupported() && Notification.permission === 'granted' && localStorage.getItem(NOTIFY_PREF_KEY) !== '0';
 }
 
+/**
+ * Updates the bell button to show whether notifications are on.
+ */
 function updateNotifyButton() {
   const btn = document.getElementById('notifyBtn');
   if (!btn) return;
@@ -843,6 +1069,10 @@ function updateNotifyButton() {
   if (slash) slash.classList.toggle('hidden', on);
 }
 
+/**
+ * Asks for notification permission the first time, then toggles notifications
+ * on and off.
+ */
 async function toggleNotifications() {
   if (!notificationsSupported()) return showToast(t('notifyUnsupported'));
   if (Notification.permission === 'denied') return showToast(t('notifyBlocked'));
@@ -862,6 +1092,14 @@ async function toggleNotifications() {
   updateNotifyButton();
 }
 
+/**
+ * Notifies the user: an in-app toast while the tab is visible, otherwise a
+ * system notification (if enabled).
+ *
+ * @param {string} title
+ * @param {string} body
+ * @param {string} [taskId] Task to open from the toast.
+ */
 async function notifyUser(title, body, taskId) {
   // In-app toast while the tab is visible; system notification otherwise.
   if (document.visibilityState === 'visible') {
@@ -884,6 +1122,13 @@ async function notifyUser(title, body, taskId) {
   }
 }
 
+/**
+ * Handles a new activity_log row from realtime: updates the feed and summary,
+ * and notifies the user about assignments, mentions and comments on their tasks
+ * by someone else.
+ *
+ * @param {object} payload Supabase realtime payload.
+ */
 function handleActivityRealtime(payload) {
   const a = payload && payload.new;
   if (!a || !a.id) return;
@@ -915,6 +1160,11 @@ function handleActivityRealtime(payload) {
 }
 
 let _commentsRenderTimer = null;
+/**
+ * Applies a realtime comment insert, update or delete and re-renders.
+ *
+ * @param {object} payload Supabase realtime payload.
+ */
 function handleCommentsRealtime(payload) {
   if (!payload) return;
   if (payload.eventType === 'DELETE') {
@@ -941,6 +1191,11 @@ let calendarCursor = (() => { const d = new Date(); return new Date(d.getFullYea
 let calendarSelectedDay = null;
 let _calendarList = [];
 
+/**
+ * Moves the calendar by a number of months, or back to today when delta is 0.
+ *
+ * @param {number} delta
+ */
 function calendarShift(delta) {
   if (delta === 0) {
     const d = new Date();
@@ -952,6 +1207,13 @@ function calendarShift(delta) {
   renderCalendar(_calendarList);
 }
 
+/**
+ * HTML for a draggable task chip in the calendar.
+ *
+ * @param {object} task
+ * @param {boolean} [compact=false]
+ * @returns {string}
+ */
 function calendarChipHtml(task, compact = false) {
   const st = getTaskStatus(task);
   const overdue = isOverdue(task.due_date, st);
@@ -965,6 +1227,12 @@ function calendarChipHtml(task, compact = false) {
     <span class="w-1.5 h-1.5 rounded-full shrink-0 ${prDot}"></span><span class="truncate">${escapeHtml(task.title)}</span></div>`;
 }
 
+/**
+ * Renders the month grid (week starts Saturday in Arabic, Sunday in English),
+ * the selected day's tasks and the undated tasks.
+ *
+ * @param {object[]} list Filtered tasks of the active project.
+ */
 function renderCalendar(list) {
   _calendarList = list;
   const root = document.getElementById('calendarView');
@@ -1081,6 +1349,12 @@ function renderCalendar(list) {
     </div>`;
 }
 
+/**
+ * Changes a task's due date optimistically (null removes it).
+ *
+ * @param {string} taskId
+ * @param {string|null} dateStr YYYY-MM-DD.
+ */
 async function setTaskDueDate(taskId, dateStr) {
   const task = tasks.find(x => x.id === taskId);
   if (!task || (task.due_date || null) === (dateStr || null)) return;
@@ -1152,10 +1426,23 @@ async function setTaskDueDate(taskId, dateStr) {
 // 7) DAILY SUMMARY (+ AI)
 // =========================================================================
 
+/**
+ * localStorage key for per-project, per-day summary state.
+ *
+ * @param {'hidden'|'ai'} kind
+ * @returns {string}
+ */
 function summaryKey(kind) {
   return `enjaz_summary_${kind}_${activeProjectId}_${todayStr()}`;
 }
 
+/**
+ * Collects today's numbers for the summary: the user's own open tasks if they
+ * have any (else the whole project), due today, overdue, and tasks teammates
+ * finished in the last 24 hours.
+ *
+ * @returns {object}
+ */
 function computeDailySummary() {
   const me = getCurrentIdentity();
   const today = todayStr();
@@ -1177,6 +1464,9 @@ function computeDailySummary() {
   };
 }
 
+/**
+ * Renders the daily summary card, unless it was hidden for today.
+ */
 function renderDailySummary() {
   const card = document.getElementById('dailySummaryCard');
   if (!card) return;
@@ -1226,11 +1516,17 @@ function renderDailySummary() {
   card.classList.remove('hidden');
 }
 
+/**
+ * Hides the daily summary until tomorrow.
+ */
 function hideDailySummary() {
   try { localStorage.setItem(summaryKey('hidden'), '1'); } catch { /* ignore */ }
   renderDailySummary();
 }
 
+/**
+ * Asks the AI for a short daily brief and caches it for today.
+ */
 async function generateAiDailySummary() {
   const btn = document.getElementById('summaryAiBtn');
   const label = document.getElementById('summaryAiBtnLabel');
@@ -1278,6 +1574,10 @@ document.addEventListener('click', (e) => {
 
 const OFFLINE_SNAPSHOT_KEY = 'enjaz_offline_snapshot_v1';
 
+/**
+ * Saves the loaded data to localStorage so the app can be browsed offline
+ * (large inline images are dropped).
+ */
 function saveOfflineSnapshot() {
   try {
     const stripData = url => (typeof url === 'string' && url.startsWith('data:') && url.length > 20000 ? '' : url);
@@ -1296,6 +1596,11 @@ function saveOfflineSnapshot() {
   }
 }
 
+/**
+ * Restores the last saved data and marks the app as offline.
+ *
+ * @returns {boolean} True if a snapshot was loaded.
+ */
 function loadOfflineSnapshot() {
   try {
     const snap = JSON.parse(localStorage.getItem(OFFLINE_SNAPSHOT_KEY) || 'null');
@@ -1343,6 +1648,9 @@ window.addEventListener('appinstalled', () => {
   if (btn) btn.classList.add('hidden');
 });
 
+/**
+ * Shows the browser's install prompt for the PWA.
+ */
 async function installApp() {
   if (!_deferredInstallPrompt) return;
   _deferredInstallPrompt.prompt();

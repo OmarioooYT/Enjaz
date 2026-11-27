@@ -1,3 +1,21 @@
+/**
+ * Enjaz — App entry point: startup and keyboard shortcuts. Loaded last.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
+/**
+ * Starts the app: applies the saved language, makes sure there is a Supabase
+ * session (anonymous for guests), loads data, subscribes to realtime and shows
+ * the sign-in or tutorial modal when needed. Falls back to the offline snapshot
+ * if startup fails.
+ *
+ * @returns {Promise<void>}
+ */
 async function boot() {
   applyLanguage(currentLang, false);
 

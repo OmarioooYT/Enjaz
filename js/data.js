@@ -1,3 +1,14 @@
+/**
+ * Enjaz — Loading data from Supabase, realtime subscriptions and merging local changes
+ * that are still being saved.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
 let _dataLoadInFlight = false;
 let _dataLoadPending = false;
 let _realtimeDataTimer = null;
@@ -7,8 +18,13 @@ let _realtimeMembersTimer = null;
 // so leaving a project during this visit does not immediately re-join it.
 const _joinAttemptedCodes = new Set();
 
-// Access is enforced by Supabase row-level security: the only projects a
-// user can read are the ones they are a member of.
+/**
+ * Returns the IDs of the projects the user belongs to. Access is enforced by
+ * row-level security; opening a share link (?project=CODE) joins that project
+ * once per visit.
+ *
+ * @returns {Promise<string[]>}
+ */
 async function resolveAccessibleProjectIds() {
   const ident = getCurrentIdentity();
   if (!currentUser || !ident.id) return [];
@@ -34,6 +50,12 @@ async function resolveAccessibleProjectIds() {
   return Array.from(idSet);
 }
 
+/**
+ * Reloads just the member list for the loaded projects (cheaper than a full
+ * reload).
+ *
+ * @returns {Promise<void>}
+ */
 async function loadMembersOnly() {
   const allowedIds = projects.map(p => p.id);
   if (allowedIds.length === 0) {
@@ -52,6 +74,14 @@ async function loadMembersOnly() {
   }
 }
 
+/**
+ * Loads projects, tasks, members, comments and activity for every accessible
+ * project, then re-renders. Concurrent calls are coalesced into one follow-up
+ * load; local changes still being saved are kept. Falls back to the offline
+ * snapshot on failure.
+ *
+ * @returns {Promise<void>}
+ */
 async function loadAllData() {
   if (_dataLoadInFlight) {
     _dataLoadPending = true;
@@ -144,16 +174,26 @@ async function loadAllData() {
   }
 }
 
+/**
+ * Debounces a full reload after a realtime change to projects or tasks.
+ */
 function scheduleRealtimeReload() {
   clearTimeout(_realtimeDataTimer);
   _realtimeDataTimer = setTimeout(() => loadAllData(), 250);
 }
 
+/**
+ * Debounces a member-list reload after a realtime change to project_members.
+ */
 function scheduleMembersReload() {
   clearTimeout(_realtimeMembersTimer);
   _realtimeMembersTimer = setTimeout(() => loadMembersOnly(), 250);
 }
 
+/**
+ * Subscribes to Supabase Realtime for projects, tasks, members, comments and
+ * activity. Row-level security limits events to the user's projects.
+ */
 function subscribeRealtime() {
   db.channel('enjaz-teams-realtime')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, scheduleRealtimeReload)

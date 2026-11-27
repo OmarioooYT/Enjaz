@@ -1,15 +1,42 @@
-// True only for a real (OAuth) account. Guests also have a Supabase
-// session, but it is anonymous.
+/**
+ * Enjaz — Identity: Supabase sessions (OAuth or anonymous guests), the account card,
+ * profile editing and project membership.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
+/**
+ * True only for a real OAuth account. Guests also have a Supabase session, but
+ * it is anonymous.
+ *
+ * @returns {boolean}
+ */
 function isSignedInUser() {
   return Boolean(currentUser && !currentUser.is_anonymous);
 }
 
+/**
+ * Whether the visitor has identified themselves, either by signing in or by
+ * entering a guest display name.
+ *
+ * @returns {boolean}
+ */
 function hasIdentity() {
   return Boolean(isSignedInUser() || (localStorage.getItem('enjaz_username') || '').trim());
 }
 
-// Every visitor needs a Supabase session so row-level security can identify
-// them. Guests get an anonymous session (enable "Allow anonymous sign-ins").
+/**
+ * Returns the current Supabase user, signing in anonymously if there is no
+ * session. Every visitor needs a session so row-level security can identify
+ * them (requires "Allow anonymous sign-ins" in Supabase).
+ *
+ * @returns {Promise<object>} The Supabase user.
+ * @throws When anonymous sign-in fails (e.g. offline).
+ */
 async function ensureSession() {
   const { data: { session } } = await db.auth.getSession();
   if (session) return session.user;
@@ -18,6 +45,13 @@ async function ensureSession() {
   return data.user;
 }
 
+/**
+ * Works out which OAuth provider the user signed in with: the last one they
+ * chose if it is linked, else the most recently used identity.
+ *
+ * @param {object|null} user Supabase user.
+ * @returns {string} Provider name, or 'guest'.
+ */
 function resolveActiveOAuthProvider(user) {
   if (!user) return 'guest';
   const identities = Array.isArray(user.identities) ? user.identities : [];
@@ -40,6 +74,12 @@ function resolveActiveOAuthProvider(user) {
   return (user.app_metadata && user.app_metadata.provider) || 'oauth';
 }
 
+/**
+ * Reads the locally saved profile overrides (name, role, avatar) for a user.
+ *
+ * @param {string} userId
+ * @returns {object}
+ */
 function getSavedProfileOverride(userId) {
   if (!userId) return {};
   try {
@@ -50,6 +90,12 @@ function getSavedProfileOverride(userId) {
   }
 }
 
+/**
+ * Saves profile overrides for a user in localStorage.
+ *
+ * @param {string} userId
+ * @param {object} data
+ */
 function saveProfileOverride(userId, data) {
   if (!userId) return;
   try {
@@ -59,6 +105,13 @@ function saveProfileOverride(userId, data) {
   }
 }
 
+/**
+ * Builds the identity shown in the app for the current visitor, merging OAuth
+ * metadata, saved overrides and the guest display name.
+ *
+ * @returns {{id: string, name: string, email: string, avatar_url: string,
+ *   role: string, provider: string}}
+ */
 function getCurrentIdentity() {
   if (isSignedInUser()) {
     const provider = resolveActiveOAuthProvider(currentUser);
@@ -100,6 +153,10 @@ function getCurrentIdentity() {
   };
 }
 
+/**
+ * Updates the sidebar account card (avatar, name, provider badge, sign-in/out
+ * button).
+ */
 function renderAuthUI() {
   const ident = getCurrentIdentity();
   const avatarWrap = document.getElementById('userAvatarWrap');
@@ -143,6 +200,11 @@ function renderAuthUI() {
   }
 }
 
+/**
+ * Opens the guest-name / sign-in modal.
+ *
+ * @param {boolean} [required=false] When true the modal cannot be dismissed.
+ */
 function openAuthModal(required = false) {
   document.getElementById('guestNameModalInput').value = (localStorage.getItem('enjaz_username') || '').trim();
   document.getElementById('authModalCloseBtn').classList.toggle('hidden', required);
@@ -150,10 +212,19 @@ function openAuthModal(required = false) {
   setTimeout(() => document.getElementById('guestNameModalInput').focus(), 50);
 }
 
+/**
+ * Closes the guest-name / sign-in modal.
+ */
 function closeAuthModal() {
   animateModalClose('authModal');
 }
 
+/**
+ * Saves the guest display name from the modal, registers the guest in the
+ * active project and reloads data.
+ *
+ * @param {SubmitEvent} e
+ */
 async function handleGuestSubmit(e) {
   e.preventDefault();
   const name = document.getElementById('guestNameModalInput').value.trim();
@@ -168,6 +239,13 @@ async function handleGuestSubmit(e) {
   maybeTriggerTutorial();
 }
 
+/**
+ * Starts OAuth sign-in. A guest links the provider to their anonymous account
+ * so their projects are kept (requires "Allow manual linking"); otherwise a
+ * normal sign-in is used.
+ *
+ * @param {'google'|'discord'|'github'} provider
+ */
 async function signInWithProvider(provider) {
   if (window.location.protocol === 'file:') {
     showToast('ارفع الموقع على GitHub Pages أو Netlify أو شغّله على localhost عشان OAuth يشتغل');
@@ -196,6 +274,9 @@ async function signInWithProvider(provider) {
   }
 }
 
+/**
+ * Signs out, starts a fresh anonymous guest session and reloads data.
+ */
 async function signOutUser() {
   localStorage.removeItem('enjaz_last_oauth_provider');
   await db.auth.signOut();
@@ -210,6 +291,9 @@ async function signOutUser() {
   showToast('تم تسجيل الخروج');
 }
 
+/**
+ * Opens the onboarding tutorial for first-time users who have no projects yet.
+ */
 function maybeTriggerTutorial() {
   if (isSharedMode || urlProjectParam) return;
   if (!localStorage.getItem('enjaz_tutorial_done') && projects.length === 0) {
@@ -217,6 +301,13 @@ function maybeTriggerTutorial() {
   }
 }
 
+/**
+ * Makes sure the current user has an up-to-date member row in the active
+ * project: updates their own row, or joins through join_project() if they are
+ * not a member yet.
+ *
+ * @param {string} [role='Member'] Role used when joining.
+ */
 async function registerCurrentUserInProject(role = 'Member') {
   if (!activeProjectId) return;
   const ident = getCurrentIdentity();
@@ -245,8 +336,15 @@ async function registerCurrentUserInProject(role = 'Member') {
   if (joined) loadMembersOnly();
 }
 
-// Membership is created server-side by join_project(); knowing the project
-// code is the invitation. Returns { id, name } or null if the code is unknown.
+/**
+ * Joins a project by its code through the join_project() database function.
+ * Knowing the code is the invitation.
+ *
+ * @param {string} code Project code, case-insensitive.
+ * @param {string} [role='Member']
+ * @returns {Promise<{id: string, name: string}|null>} The project, or null if
+ *   the code is unknown.
+ */
 async function joinProjectRpc(code, role = 'Member') {
   const ident = getCurrentIdentity();
   const { data, error } = await db.rpc('join_project', {
@@ -265,6 +363,12 @@ async function joinProjectRpc(code, role = 'Member') {
   return row && row.id ? row : null;
 }
 
+/**
+ * Shows the avatar (or initial) in the edit-profile modal.
+ *
+ * @param {string} avatarUrl
+ * @param {string} nameStr
+ */
 function updateProfileAvatarPreview(avatarUrl, nameStr) {
   const prev = document.getElementById('profileAvatarPreview');
   const removeBtn = document.getElementById('removeProfileAvatarBtn');
@@ -278,6 +382,11 @@ function updateProfileAvatarPreview(avatarUrl, nameStr) {
   }
 }
 
+/**
+ * Opens the edit-profile modal. Users can only edit their own profile.
+ *
+ * @param {string|null} [targetUserId=null]
+ */
 function openEditProfileModal(targetUserId = null) {
   const ident = getCurrentIdentity();
   // Strictly enforce: a user can ONLY edit their own profile
@@ -301,10 +410,19 @@ function openEditProfileModal(targetUserId = null) {
   setTimeout(() => document.getElementById('profileNameInput').focus(), 60);
 }
 
+/**
+ * Closes the edit-profile modal.
+ */
 function closeEditProfileModal() {
   animateModalClose('editProfileModal');
 }
 
+/**
+ * Center-crops and downsizes an uploaded avatar to 160x160 WebP for the profile
+ * preview.
+ *
+ * @param {Event} event File input change event.
+ */
 function handleProfileAvatarUpload(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
@@ -334,12 +452,21 @@ function handleProfileAvatarUpload(event) {
   reader.readAsDataURL(file);
 }
 
+/**
+ * Marks the avatar as removed in the edit-profile modal.
+ */
 function clearProfileAvatar() {
   document.getElementById('profileAvatarData').value = '__CLEARED__';
   document.getElementById('profileAvatarFile').value = '';
   updateProfileAvatarPreview('', document.getElementById('profileNameInput').value.trim());
 }
 
+/**
+ * Saves the user's name, role and avatar: locally, on their Supabase account
+ * (signed-in users) and on their own member rows.
+ *
+ * @param {SubmitEvent} e
+ */
 async function saveOwnProfile(e) {
   e.preventDefault();
   const ident = getCurrentIdentity();

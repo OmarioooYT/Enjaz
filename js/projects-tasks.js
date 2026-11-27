@@ -1,3 +1,18 @@
+/**
+ * Enjaz — Creating, editing, deleting and sharing projects and tasks.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
+/**
+ * Switches the workspace view and highlights the matching tab.
+ *
+ * @param {'board'|'list'|'calendar'|'activity'|'team'} mode
+ */
 function setViewMode(mode) {
   viewMode = mode;
   ['board', 'list', 'calendar', 'activity', 'team'].forEach(m => {
@@ -19,6 +34,15 @@ function setViewMode(mode) {
   }
 }
 
+/**
+ * Opens the task modal to create a new task or edit an existing one (including
+ * its checklist and comments).
+ *
+ * @param {string|null} [taskId=null] Task to edit; null creates a new task.
+ * @param {'todo'|'in_progress'|'done'} [defaultStatus='todo'] Status for a
+ *   new task.
+ * @param {string} [defaultDueDate=''] YYYY-MM-DD due date for a new task.
+ */
 function openTaskModal(taskId = null, defaultStatus = 'todo', defaultDueDate = '') {
   if (!activeProjectId) return showToast(currentLang === 'en' ? 'Create a project first' : 'أنشئ مشروعاً أولاً');
   const modal = document.getElementById('taskModal');
@@ -57,12 +81,22 @@ function openTaskModal(taskId = null, defaultStatus = 'todo', defaultDueDate = '
   setTimeout(() => document.getElementById('fTaskTitle').focus(), 50);
 }
 
+/**
+ * Closes the task modal.
+ */
 function closeTaskModal() {
   animateModalClose('taskModal');
 }
 
-// Tries the full payload, then without newer columns, for databases that
-// have not run the latest schema yet. Returns the final error (or null).
+/**
+ * Inserts or updates a task, retrying without newer columns for databases that
+ * have not run the latest schema yet.
+ *
+ * @param {'insert'|'update'} kind
+ * @param {object} payload Task fields.
+ * @param {string} [id] Task ID (update only).
+ * @returns {Promise<object|null>} The final error, or null on success.
+ */
 async function writeTaskWithFallback(kind, payload, id) {
   const run = (p) => (kind === 'insert'
     ? db.from('tasks').insert([p])
@@ -79,8 +113,12 @@ async function writeTaskWithFallback(kind, payload, id) {
   return error;
 }
 
-// Optimistic save: the change shows immediately and is rolled back if the
-// database rejects it. Realtime then syncs everyone else.
+/**
+ * Saves the task form optimistically: the change shows immediately and is
+ * rolled back if the database rejects it. Realtime then syncs everyone else.
+ *
+ * @param {SubmitEvent} e
+ */
 async function saveTask(e) {
   e.preventDefault();
   const editId = document.getElementById('editTaskId').value;
@@ -151,8 +189,10 @@ async function saveTask(e) {
   }
 }
 
-// No confirmation dialog: the task disappears at once and can be restored
-// from the toast for a few seconds.
+/**
+ * Deletes the task open in the modal. No confirmation dialog: the task
+ * disappears at once and can be restored from the undo toast.
+ */
 function deleteEditingTask() {
   const id = document.getElementById('editTaskId').value;
   if (!id) return;
@@ -160,6 +200,11 @@ function deleteEditingTask() {
   deleteTaskWithUndo(id);
 }
 
+/**
+ * Changes the active project's status optimistically.
+ *
+ * @param {'todo'|'in_progress'|'done'|'on_hold'} newStatus
+ */
 async function quickChangeProjectStatus(newStatus) {
   if (!activeProjectId) return;
   const p = projects.find(x => x.id === activeProjectId);
@@ -177,6 +222,11 @@ async function quickChangeProjectStatus(newStatus) {
   }
 }
 
+/**
+ * Opens the project modal to create a new project or edit an existing one.
+ *
+ * @param {string|null} [projectIdToEdit=null]
+ */
 function openProjectModal(projectIdToEdit = null) {
   const modal = document.getElementById('projectModal');
   const delBtn = document.getElementById('deleteProjBtn');
@@ -205,10 +255,17 @@ function openProjectModal(projectIdToEdit = null) {
   setTimeout(() => document.getElementById('pName').focus(), 50);
 }
 
+/**
+ * Closes the project modal.
+ */
 function closeProjectModal() {
   animateModalClose('projectModal');
 }
 
+/**
+ * Creates a project (with a new random code, joining it as Owner) or saves
+ * edits to an existing one optimistically.
+ */
 async function saveProject() {
   const editId = document.getElementById('editProjectId').value;
   const name = document.getElementById('pName').value.trim();
@@ -263,9 +320,14 @@ async function saveProject() {
   loadAllData();
 }
 
-// Project codes double as invitations, so they must not be guessable:
-// 12 characters from a 32-symbol alphabet = 60 bits of randomness
-// (32 divides 256, so the modulo below has no bias).
+/**
+ * Generates a project code such as PRJ-7KQ2-MX9D-4HTA. Codes double as
+ * invitations, so they must not be guessable: 12 characters from a 32-symbol
+ * alphabet give 60 bits of randomness (32 divides 256, so there is no modulo
+ * bias).
+ *
+ * @returns {string}
+ */
 function generateProjectCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const bytes = new Uint8Array(12);
@@ -275,6 +337,9 @@ function generateProjectCode() {
   return `PRJ-${code.slice(0, 4)}-${code.slice(4, 8)}-${code.slice(8)}`;
 }
 
+/**
+ * Deletes the project open in the modal (after confirmation).
+ */
 async function deleteEditingProject() {
   const id = document.getElementById('editProjectId').value;
   if (!id) return;
@@ -282,6 +347,13 @@ async function deleteEditingProject() {
   await deleteProjectById(id);
 }
 
+/**
+ * Deletes a project after confirmation. Tasks, members and comments are removed
+ * by ON DELETE CASCADE; only the owner is allowed (enforced by row-level
+ * security).
+ *
+ * @param {string} projId
+ */
 async function deleteProjectById(projId) {
   if (!projId || isSharedMode) return;
   const p = projects.find(x => x.id === projId);
@@ -316,6 +388,9 @@ async function deleteProjectById(projId) {
   loadAllData();
 }
 
+/**
+ * Joins the project whose code was typed in the sidebar and opens it.
+ */
 async function joinProjectByCode() {
   const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
   if (!code) return;
@@ -334,6 +409,9 @@ async function joinProjectByCode() {
   showToast(`تم الانضمام لمشروع: ${found.name}`);
 }
 
+/**
+ * Copies the active project's code to the clipboard.
+ */
 function copyProjectCode() {
   if (!activeProjectId) return;
   copyTextSafe(
@@ -342,6 +420,10 @@ function copyProjectCode() {
   );
 }
 
+/**
+ * Copies a share link that opens only the active project
+ * (?project=CODE&shared=1).
+ */
 function shareCurrentProject() {
   if (!activeProjectId) return showToast(currentLang === 'en' ? 'Create a project first' : 'أنشئ مشروعاً أولاً');
   const shareUrl = `${window.location.origin}${window.location.pathname}?project=${activeProjectId}&shared=1`;

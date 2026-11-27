@@ -1,3 +1,17 @@
+/**
+ * Enjaz — Rendering of the sidebar and workspace views (Kanban, table, team) and task
+ * status changes.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
+/**
+ * Re-renders the sidebar, the workspace and (if open) the AI drawer.
+ */
 function renderAll() {
   renderSidebar();
   renderWorkspace();
@@ -6,6 +20,10 @@ function renderAll() {
   }
 }
 
+/**
+ * Renders the project list in the sidebar, the header for the active project
+ * and the shared-mode notice.
+ */
 function renderSidebar() {
   document.getElementById('sharedModeSidebarNotice').classList.toggle('hidden', !isSharedMode);
   document.getElementById('sidebarNewProjBtn').classList.toggle('hidden', isSharedMode);
@@ -112,6 +130,10 @@ function renderSidebar() {
   }
 }
 
+/**
+ * Renders the active project's workspace: KPIs, filters, the current view
+ * (Kanban, table, calendar, activity or team) and the daily summary.
+ */
 function renderWorkspace() {
   const emptyEl = document.getElementById('emptyProjectsState');
   const activeEl = document.getElementById('activeWorkspaceContent');
@@ -225,6 +247,13 @@ function renderWorkspace() {
   if (typeof renderAiContextOptions === 'function') renderAiContextOptions();
 }
 
+/**
+ * Renders the team member cards with each member's assigned and completed task
+ * counts.
+ *
+ * @param {object[]} projMembers
+ * @param {object[]} projTasks
+ */
 function renderTeamView(projMembers, projTasks) {
   const grid = document.getElementById('teamCardsGrid');
   grid.innerHTML = '';
@@ -321,11 +350,19 @@ function renderTeamView(projMembers, projTasks) {
   });
 }
 
+/**
+ * Filters the Kanban board to one member's tasks.
+ *
+ * @param {string} name
+ */
 function filterByMemberAndOpenBoard(name) {
   selectedAssignee = name;
   setViewMode('board');
 }
 
+/**
+ * Opens the modal for adding a placeholder (manual) team member.
+ */
 function openAddMemberModal() {
   if (!activeProjectId) return showToast('أنشئ مشروعاً أولاً');
   document.getElementById('mName').value = '';
@@ -334,10 +371,16 @@ function openAddMemberModal() {
   setTimeout(() => document.getElementById('mName').focus(), 50);
 }
 
+/**
+ * Closes the add-member modal.
+ */
 function closeAddMemberModal() {
   animateModalClose('addMemberModal');
 }
 
+/**
+ * Adds a placeholder member (someone without an account) to the active project.
+ */
 async function saveManualMember() {
   const name = document.getElementById('mName').value.trim();
   const role = document.getElementById('mRole').value.trim() || 'Member';
@@ -365,6 +408,12 @@ async function saveManualMember() {
   }
 }
 
+/**
+ * Removes a member after confirmation. The owner can remove anyone; others can
+ * only remove placeholder members.
+ *
+ * @param {string} memberId
+ */
 async function removeMember(memberId) {
   const isEn = currentLang === 'en';
   const ok = await showConfirmDialog({
@@ -385,6 +434,11 @@ async function removeMember(memberId) {
   loadMembersOnly();
 }
 
+/**
+ * Renders the three Kanban columns with draggable task cards.
+ *
+ * @param {object[]} list Filtered tasks of the active project.
+ */
 function renderKanban(list) {
   const cols = { todo: [], in_progress: [], done: [] };
   list.forEach(item => cols[getTaskStatus(item)].push(item));
@@ -488,6 +542,11 @@ function renderKanban(list) {
   });
 }
 
+/**
+ * Renders the table view.
+ *
+ * @param {object[]} list Filtered tasks of the active project.
+ */
 function renderList(list) {
   const tbody = document.getElementById('listTableBody');
   tbody.innerHTML = '';
@@ -546,8 +605,24 @@ function renderList(list) {
   });
 }
 
+/**
+ * Highlights a Kanban column while a card is dragged over it.
+ *
+ * @param {DragEvent} e
+ */
 function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+/**
+ * Removes the Kanban column highlight.
+ *
+ * @param {DragEvent} e
+ */
 function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+/**
+ * Moves the dragged card to the column's status.
+ *
+ * @param {DragEvent} e
+ * @param {'todo'|'in_progress'|'done'} newStatus
+ */
 async function handleDrop(e, newStatus) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
@@ -555,6 +630,12 @@ async function handleDrop(e, newStatus) {
   await updateTaskStatus(draggedTaskId, newStatus);
 }
 
+/**
+ * Advances a task to the next status: To Do, In Progress, Done, then back to To
+ * Do.
+ *
+ * @param {string} taskId
+ */
 async function quickCycleStatus(taskId) {
   const t = tasks.find(x => x.id === taskId);
   if (!t) return;
@@ -563,6 +644,12 @@ async function quickCycleStatus(taskId) {
   await updateTaskStatus(taskId, next);
 }
 
+/**
+ * Changes a task's status optimistically and records who completed it.
+ *
+ * @param {string} taskId
+ * @param {'todo'|'in_progress'|'done'} newStatus
+ */
 async function updateTaskStatus(taskId, newStatus) {
   const user = getCurrentIdentity().name || 'عضو';
   const isDone = newStatus === 'done';

@@ -1,3 +1,14 @@
+/**
+ * Enjaz — Landing page (index.html): translations, language switching, the user
+ * journey walkthrough and scroll/tilt effects.
+ *
+ * Copyright (C) 2026 Omariooo
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This file is part of Enjaz, free software released under the GNU General
+ * Public License v3.0 or later. See the LICENSE file for details.
+ */
+
 const HOME_I18N = {
   ar: {
     pageTitle: 'إنجاز | رحلة المستخدم وبورتفوليو مشروع إدارة المشاريع بالذكاء الاصطناعي',
@@ -385,6 +396,12 @@ let activeJourneyStep = 1;
 const prefersReducedMotion = () =>
   Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
+/**
+ * Switches the landing page language and direction and re-translates every
+ * [data-i18n] element.
+ *
+ * @param {'ar'|'en'} lang
+ */
 function applyHomeLanguage(lang) {
   currentLang = lang === 'en' ? 'en' : 'ar';
   localStorage.setItem('enjaz_lang', currentLang);
@@ -409,10 +426,18 @@ function applyHomeLanguage(lang) {
   }
 }
 
+/**
+ * Toggles the landing page between Arabic and English.
+ */
 function toggleHomeLanguage() {
   applyHomeLanguage(currentLang === 'ar' ? 'en' : 'ar');
 }
 
+/**
+ * Switches the tabs of the app preview in the hero section.
+ *
+ * @param {string} tabName
+ */
 function switchPreviewTab(tabName) {
   document.querySelectorAll('[data-preview-tab]').forEach((btn) => {
     btn.setAttribute('aria-selected', btn.getAttribute('data-preview-tab') === tabName ? 'true' : 'false');
@@ -423,6 +448,11 @@ function switchPreviewTab(tabName) {
   });
 }
 
+/**
+ * Shows one step (1-4) of the user-journey walkthrough.
+ *
+ * @param {number} stepNum
+ */
 function selectJourneyStep(stepNum) {
   const clamped = Math.max(1, Math.min(4, Number(stepNum) || 1));
   activeJourneyStep = clamped;
@@ -458,10 +488,20 @@ function selectJourneyStep(stepNum) {
   if (nextBtn) nextBtn.disabled = clamped === 4;
 }
 
+/**
+ * Moves the user-journey walkthrough forward or back.
+ *
+ * @param {number} delta
+ */
 function stepJourney(delta) {
   selectJourneyStep(activeJourneyStep + delta);
 }
 
+/**
+ * Opens or closes the mobile navigation menu.
+ *
+ * @param {boolean} [forceState]
+ */
 function toggleMobileNav(forceState) {
   const menu = document.getElementById('mobileNavMenu');
   const btn = document.getElementById('mobileNavBtn');
@@ -471,6 +511,10 @@ function toggleMobileNav(forceState) {
   btn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
 }
 
+/**
+ * Fades sections in as they scroll into view (skipped when reduced motion is
+ * preferred).
+ */
 function initScrollReveal() {
   const els = document.querySelectorAll('.reveal');
   if (prefersReducedMotion() || !('IntersectionObserver' in window)) {
@@ -493,6 +537,9 @@ function initScrollReveal() {
   els.forEach((el) => observer.observe(el));
 }
 
+/**
+ * Drives the reading-progress bar at the top of the page.
+ */
 function initScrollProgress() {
   const bar = document.getElementById('scrollProgressBar');
   if (!bar) return;
@@ -509,6 +556,9 @@ function initScrollProgress() {
   update();
 }
 
+/**
+ * Adds the 3D tilt effect to [data-tilt] cards on devices with a mouse.
+ */
 function init3DTilt() {
   if (prefersReducedMotion()) return;
   if (window.matchMedia && window.matchMedia('(hover: none)').matches) return;
