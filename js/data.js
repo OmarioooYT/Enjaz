@@ -17,14 +17,18 @@ async function resolveAccessibleProjectIds() {
 
   const ident = getCurrentIdentity();
   if (ident.id) {
-    const { data: myMemberships } = await db
-      .from('project_members')
-      .select('project_id')
-      .eq('user_id', ident.id);
-    if (myMemberships) {
-      myMemberships.forEach(row => {
-        if (row.project_id) idSet.add(row.project_id);
-      });
+    try {
+      const { data: myMemberships } = await db
+        .from('project_members')
+        .select('project_id')
+        .eq('user_id', ident.id);
+      if (myMemberships) {
+        myMemberships.forEach(row => {
+          if (row.project_id) idSet.add(row.project_id);
+        });
+      }
+    } catch (err) {
+      console.warn('Could not fetch project_members:', err);
     }
   }
 
