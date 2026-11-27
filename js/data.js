@@ -1,3 +1,8 @@
+let _dataLoadInFlight = false;
+let _dataLoadPending = false;
+let _realtimeDataTimer = null;
+let _realtimeMembersTimer = null;
+
 async function resolveAccessibleProjectIds() {
   if (isSharedMode && sharedOnlyProjectId) {
     return [sharedOnlyProjectId];
@@ -45,6 +50,12 @@ async function loadMembersOnly() {
 }
 
 async function loadAllData() {
+  if (_dataLoadInFlight) {
+    _dataLoadPending = true;
+    return;
+  }
+  _dataLoadInFlight = true;
+
   const syncDot = document.getElementById('syncDot');
   const syncText = document.getElementById('syncText');
   try {
@@ -79,20 +90,13 @@ async function loadAllData() {
 
     const validIds = projects.map(p => p.id);
     if (validIds.length > 0) {
-      const { data: taskData, error: taskErr } = await db
-        .from('tasks')
-        .select('*')
-        .in('project_id', validIds)
-        .order('created_at', { ascending: false });
-      if (taskErr) throw taskErr;
-      tasks = taskData || [];
-
-      const { data: memData, error: memErr } = await db
-        .from('project_members')
-        .select('*')
-        .in('project_id', validIds)
-        .order('joined_at', { ascending: true });
-      members = memErr ? [] : (memData || []);
+      const [taskRes, memRes] = await Promise.all([
+        db.from('tasks').select('*').in('project_id', validIds).order('created_at', { ascending: false }),
+        db.from('project_members').select('*').in('project_id', validIds).order('joined_at', { ascending: true })
+      ]);
+      if (taskRes.error) throw taskRes.error;
+      tasks = taskRes.data || [];
+      members = memRes.error ? [] : (memRes.data || []);
     } else {
       tasks = [];
       members = [];
@@ -111,13 +115,29 @@ async function loadAllData() {
     syncDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-500';
     syncText.dataset.state = 'connectionError';
     syncText.textContent = t('connectionError');
+  } finally {
+    _dataLoadInFlight = false;
+    if (_dataLoadPending) {
+      _dataLoadPending = false;
+      loadAllData();
+    }
   }
+}
+
+function scheduleRealtimeReload() {
+  clearTimeout(_realtimeDataTimer);
+  _realtimeDataTimer = setTimeout(() => loadAllData(), 250);
+}
+
+function scheduleMembersReload() {
+  clearTimeout(_realtimeMembersTimer);
+  _realtimeMembersTimer = setTimeout(() => loadMembersOnly(), 250);
 }
 
 function subscribeRealtime() {
   db.channel('enjaz-teams-realtime')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => loadAllData())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadAllData())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'project_members' }, () => loadMembersOnly())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, scheduleRealtimeReload)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, scheduleRealtimeReload)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'project_members' }, scheduleMembersReload)
     .subscribe();
 }
