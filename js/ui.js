@@ -544,9 +544,26 @@ async function copyTextSafe(text, successMsg) {
   }
 }
 
-function showToast(msg) {
+// showToast(message, { actionLabel, onAction, duration })
+function showToast(msg, opts = {}) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
+  const { actionLabel = '', onAction = null, duration = 3200 } = opts || {};
+  t.textContent = '';
+  const textEl = document.createElement('span');
+  textEl.textContent = msg;
+  t.appendChild(textEl);
+  if (actionLabel && typeof onAction === 'function') {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = actionLabel;
+    btn.className = 'ms-3 px-2.5 py-1 rounded-lg bg-brand/20 hover:bg-brand/30 border border-brand/40 text-brand font-bold transition';
+    btn.onclick = () => {
+      clearTimeout(window._toastTimer);
+      t.classList.add('hidden');
+      onAction();
+    };
+    t.appendChild(btn);
+  }
   clearTimeout(window._toastTimer);
   clearTimeout(window._toastHideTimer);
   t.classList.remove('hidden', 'animate-toast-in', 'animate-toast-out');
@@ -563,7 +580,7 @@ function showToast(msg) {
       t.classList.add('hidden');
       t.classList.remove('animate-toast-out');
     }, 160);
-  }, 3200);
+  }, duration);
 }
 
 function toggleMobileSidebar(open) {

@@ -261,13 +261,187 @@ create policy members_delete on public.project_members
     or public.is_project_owner(project_id)                       -- owner removes anyone
   );
 
+-- =====================================================================
+-- v2: subtasks, comments, activity log
+-- =====================================================================
+
+alter table public.tasks add column if not exists subtasks jsonb default '[]'::jsonb;
+
+create table if not exists public.task_comments (
+  id          text primary key,
+  task_id     text not null references public.tasks(id) on delete cascade,
+  project_id  text not null references public.projects(id) on delete cascade,
+  user_id     text not null default auth.uid()::text,
+  author_name text not null default '',
+  body        text not null check (char_length(body) between 1 and 4000),
+  mentions    text[] default '{}',
+  created_at  bigint default (extract(epoch from now()) * 1000)::bigint
+);
+create index if not exists task_comments_task_id_idx    on public.task_comments(task_id);
+create index if not exists task_comments_project_id_idx on public.task_comments(project_id);
+
+create table if not exists public.activity_log (
+  id          bigint generated always as identity primary key,
+  project_id  text not null references public.projects(id) on delete cascade,
+  task_id     text,
+  task_title  text default '',
+  user_id     text default auth.uid()::text,
+  actor_name  text default '',
+  action      text not null,
+  details     jsonb default '{}'::jsonb,
+  created_at  bigint default (extract(epoch from now()) * 1000)::bigint
+);
+create index if not exists activity_log_project_created_idx on public.activity_log(project_id, created_at desc);
+
+alter table public.task_comments enable row level security;
+alter table public.activity_log  enable row level security;
+
+drop policy if exists comments_select on public.task_comments;
+drop policy if exists comments_insert on public.task_comments;
+drop policy if exists comments_update on public.task_comments;
+drop policy if exists comments_delete on public.task_comments;
+drop policy if exists activity_select on public.activity_log;
+
+create policy comments_select on public.task_comments
+  for select to authenticated
+  using (public.is_project_member(project_id));
+
+create policy comments_insert on public.task_comments
+  for insert to authenticated
+  with check (
+    user_id = auth.uid()::text
+    and public.is_project_member(project_id)
+    and exists (select 1 from public.tasks t where t.id = task_id and t.project_id = task_comments.project_id)
+  );
+
+create policy comments_update on public.task_comments
+  for update to authenticated
+  using (user_id = auth.uid()::text)
+  with check (user_id = auth.uid()::text);
+
+create policy comments_delete on public.task_comments
+  for delete to authenticated
+  using (user_id = auth.uid()::text or public.is_project_owner(project_id));
+
+-- Activity is read-only for clients; rows are written by the triggers below.
+create policy activity_select on public.activity_log
+  for select to authenticated
+  using (public.is_project_member(project_id));
+
+-- Writes one activity row, using the actor's display name in that project.
+create or replace function public.log_activity(
+  p_project_id text, p_task_id text, p_task_title text, p_action text, p_details jsonb
+) returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_name text;
+begin
+  -- Skip when the project itself is being deleted (cascade).
+  if not exists (select 1 from public.projects where id = p_project_id) then
+    return;
+  end if;
+  select m.name into v_name from public.project_members m
+   where m.project_id = p_project_id and m.user_id = auth.uid()::text
+   limit 1;
+  insert into public.activity_log (project_id, task_id, task_title, user_id, actor_name, action, details)
+  values (p_project_id, p_task_id, coalesce(p_task_title, ''), auth.uid()::text, coalesce(v_name, ''), p_action, coalesce(p_details, '{}'::jsonb));
+end;
+$$;
+
+revoke all on function public.log_activity(text, text, text, text, jsonb) from public, anon, authenticated;
+
+create or replace function public.tasks_activity_trigger()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'INSERT' then
+    perform public.log_activity(new.project_id, new.id, new.title, 'task_created',
+      jsonb_build_object('assignee', coalesce(new.assignee, ''), 'status', coalesce(new.status, 'todo')));
+    if coalesce(new.assignee, '') <> '' then
+      perform public.log_activity(new.project_id, new.id, new.title, 'task_assigned',
+        jsonb_build_object('assignee', new.assignee));
+    end if;
+    return new;
+  elsif tg_op = 'UPDATE' then
+    if coalesce(new.status, '') is distinct from coalesce(old.status, '') then
+      perform public.log_activity(new.project_id, new.id, new.title, 'task_status',
+        jsonb_build_object('from', old.status, 'to', new.status));
+    end if;
+    if coalesce(new.assignee, '') <> '' and coalesce(new.assignee, '') is distinct from coalesce(old.assignee, '') then
+      perform public.log_activity(new.project_id, new.id, new.title, 'task_assigned',
+        jsonb_build_object('assignee', new.assignee));
+    end if;
+    if new.due_date is distinct from old.due_date then
+      perform public.log_activity(new.project_id, new.id, new.title, 'task_due_changed',
+        jsonb_build_object('from', old.due_date, 'to', new.due_date));
+    end if;
+    return new;
+  else
+    perform public.log_activity(old.project_id, old.id, old.title, 'task_deleted', '{}'::jsonb);
+    return old;
+  end if;
+end;
+$$;
+
+drop trigger if exists tasks_activity on public.tasks;
+create trigger tasks_activity
+  after insert or update or delete on public.tasks
+  for each row execute function public.tasks_activity_trigger();
+
+create or replace function public.comments_activity_trigger()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_title text;
+begin
+  select title into v_title from public.tasks where id = new.task_id;
+  perform public.log_activity(new.project_id, new.task_id, v_title, 'comment_added',
+    jsonb_build_object('excerpt', left(new.body, 140), 'mentions', to_jsonb(coalesce(new.mentions, '{}'))));
+  return new;
+end;
+$$;
+
+drop trigger if exists comments_activity on public.task_comments;
+create trigger comments_activity
+  after insert on public.task_comments
+  for each row execute function public.comments_activity_trigger();
+
+create or replace function public.members_activity_trigger()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.provider is distinct from 'manual' then
+    insert into public.activity_log (project_id, user_id, actor_name, action, details)
+    values (new.project_id, new.user_id, new.name, 'member_joined', jsonb_build_object('role', new.role));
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists members_activity on public.project_members;
+create trigger members_activity
+  after insert on public.project_members
+  for each row execute function public.members_activity_trigger();
+
 -- ---------- Realtime ---------------------------------------------------
 -- Realtime respects the policies above, so clients only receive changes
 -- for projects they belong to. Make sure the tables are published:
 do $$
 declare t text;
 begin
-  foreach t in array array['projects', 'tasks', 'project_members'] loop
+  foreach t in array array['projects', 'tasks', 'project_members', 'task_comments', 'activity_log'] loop
     if not exists (
       select 1 from pg_publication_tables
       where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t

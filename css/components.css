@@ -355,3 +355,9 @@ html[dir="ltr"] #aiDrawer.ai-drawer-closed {
     transform: none !important;
   }
 }
+
+/* Calendar drop target */
+.cal-cell.drag-over {
+  border-color: rgba(252, 106, 13, 0.6) !important;
+  background: rgba(252, 106, 13, 0.08) !important;
+}

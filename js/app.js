@@ -38,6 +38,7 @@ async function boot() {
 
     await loadAllData();
     subscribeRealtime();
+    updateNotifyButton();
 
     if (!hasIdentity()) {
       openAuthModal(true);
@@ -46,6 +47,8 @@ async function boot() {
     }
   } catch (err) {
     console.error('Boot error:', err);
+    window._enjazBootFailed = true;
+    if (loadOfflineSnapshot()) return;
     const syncDot = document.getElementById('syncDot');
     const syncText = document.getElementById('syncText');
     if (syncDot) syncDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-500';
