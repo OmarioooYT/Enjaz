@@ -476,12 +476,14 @@ function toggleLanguage() {
   applyLanguage(currentLang === 'ar' ? 'en' : 'ar', true);
 }
 
-// Sync desktop & mobile search inputs
+// Sync desktop & mobile search inputs (debounced workspace render)
+let _searchRenderTimer = null;
 function syncSearch(val) {
   searchQuery = val || '';
   const d = document.getElementById('searchInput');
   const m = document.getElementById('mobileSearchInput');
   if (d && d.value !== searchQuery) d.value = searchQuery;
   if (m && m.value !== searchQuery) m.value = searchQuery;
-  renderWorkspace();
+  clearTimeout(_searchRenderTimer);
+  _searchRenderTimer = setTimeout(() => renderWorkspace(), 120);
 }
