@@ -49,15 +49,15 @@ function renderSidebar() {
 
       const rowControls = isSharedMode
         ? `<div class="flex items-center gap-0.5 shrink-0">
-             <button onclick="leaveProject('${p.id}')" title="${t('leaveProjectBtn')}" aria-label="${t('leaveProjectBtn')}"
+             <button onclick="leaveProject(${jsArg(p.id)})" title="${t('leaveProjectBtn')}" aria-label="${t('leaveProjectBtn')}"
                class="p-1.5 rounded-lg hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition">${ICONS.leave}</button>
            </div>`
         : `<div class="flex items-center gap-0.5 opacity-90 lg:opacity-0 group-hover:opacity-100 transition shrink-0">
-             <button onclick="openProjectModal('${p.id}')" title="${t('editProjectBtn')}" aria-label="${t('editProjectBtn')}"
+             <button onclick="openProjectModal(${jsArg(p.id)})" title="${t('editProjectBtn')}" aria-label="${t('editProjectBtn')}"
                class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition">${ICONS.edit}</button>
-             <button onclick="leaveProject('${p.id}')" title="${t('leaveProjectBtn')}" aria-label="${t('leaveProjectBtn')}"
+             <button onclick="leaveProject(${jsArg(p.id)})" title="${t('leaveProjectBtn')}" aria-label="${t('leaveProjectBtn')}"
                class="p-1.5 rounded-lg hover:bg-brand/20 text-zinc-400 hover:text-brand transition">${ICONS.leave}</button>
-             <button onclick="deleteProjectById('${p.id}')" title="${t('deleteProjectTitle')}" aria-label="${t('deleteProjectTitle')}"
+             <button onclick="deleteProjectById(${jsArg(p.id)})" title="${t('deleteProjectTitle')}" aria-label="${t('deleteProjectTitle')}"
                class="p-1.5 rounded-lg hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition">${ICONS.trash}</button>
            </div>`;
 
@@ -368,9 +368,11 @@ async function removeMember(memberId) {
     variant: 'danger'
   });
   if (!ok) return;
-  const { error } = await db.from('project_members').delete().eq('id', memberId);
-  if (error) {
-    showToast(isEn ? 'Failed to remove member' : 'تعذر إزالة العضو');
+  // RLS lets owners remove anyone, and members remove only manual entries;
+  // a filtered-out delete returns no error, so check what was deleted.
+  const { data: removed, error } = await db.from('project_members').delete().eq('id', memberId).select('id');
+  if (error || !removed || removed.length === 0) {
+    showToast(isEn ? 'Only the project owner can remove this member' : 'فقط مالك المشروع يمكنه إزالة هذا العضو');
   } else {
     showToast(isEn ? 'Member removed' : 'تمت إزالة العضو');
   }
@@ -431,11 +433,11 @@ function renderKanban(list) {
             ${task.category ? `<span class="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-zinc-300">${escapeHtml(task.category)}</span>` : ''}
           </div>
           <div class="flex items-center gap-1 shrink-0">
-            <button onclick="openAiChat('${task.id}')" title="${t('aiAskAboutTaskTitle')}" aria-label="${t('aiAskAboutTaskTitle')}"
+            <button onclick="openAiChat(${jsArg(task.id)})" title="${t('aiAskAboutTaskTitle')}" aria-label="${t('aiAskAboutTaskTitle')}"
               class="w-7 h-7 sm:w-6 sm:h-6 rounded-lg border border-brand/25 bg-brand/10 text-brand hover:bg-brand/25 hover:border-brand/50 flex items-center justify-center transition shrink-0">
               ${ICONS.sparkles}
             </button>
-            <button onclick="quickCycleStatus('${task.id}')" title="${t('quickStatusTitle')}" aria-label="${t('quickStatusTitle')}"
+            <button onclick="quickCycleStatus(${jsArg(task.id)})" title="${t('quickStatusTitle')}" aria-label="${t('quickStatusTitle')}"
               class="w-7 h-7 sm:w-6 sm:h-6 rounded-lg border flex items-center justify-center transition shrink-0 ${status === 'done'
           ? 'bg-emerald-500 border-emerald-500 text-obsidian'
           : status === 'in_progress'
@@ -510,7 +512,7 @@ function renderList(list) {
     };
     tr.innerHTML = `
       <td class="py-3.5 px-4">
-        <button onclick="quickCycleStatus('${task.id}')" aria-label="${t('quickStatusTitle')}"
+        <button onclick="quickCycleStatus(${jsArg(task.id)})" aria-label="${t('quickStatusTitle')}"
           class="w-6 h-6 rounded-lg border flex items-center justify-center transition ${st === 'done' ? 'bg-emerald-500 border-emerald-500 text-obsidian' : 'border-white/20 text-zinc-400 hover:border-brand'
       }">${st === 'done' ? ICONS.check : ''}</button>
       </td>
@@ -525,9 +527,9 @@ function renderList(list) {
       <td class="py-3.5 px-4 text-zinc-300">${escapeHtml(task.category || '—')}</td>
       <td class="py-3.5 px-4 text-end">
         <div class="inline-flex items-center gap-1">
-          <button onclick="openAiChat('${task.id}')" title="${t('aiAskAboutTaskTitle')}" aria-label="${t('aiAskAboutTaskTitle')}"
+          <button onclick="openAiChat(${jsArg(task.id)})" title="${t('aiAskAboutTaskTitle')}" aria-label="${t('aiAskAboutTaskTitle')}"
             class="text-brand hover:text-white p-1.5 rounded-lg bg-brand/10 hover:bg-brand/25 border border-brand/25 transition">${ICONS.sparkles}</button>
-          <button onclick="openTaskModal('${task.id}')" class="text-zinc-300 hover:text-brand px-2.5 py-1 rounded-lg hover:bg-brand/10 font-semibold transition">${t('editBtn')}</button>
+          <button onclick="openTaskModal(${jsArg(task.id)})" class="text-zinc-300 hover:text-brand px-2.5 py-1 rounded-lg hover:bg-brand/10 font-semibold transition">${t('editBtn')}</button>
         </div>
       </td>
     `;

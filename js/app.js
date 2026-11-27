@@ -6,13 +6,30 @@ async function boot() {
       throw new Error('Supabase SDK failed to load');
     }
 
-    const { data: { session } } = await db.auth.getSession();
-    currentUser = session ? session.user : null;
+    // Linking an OAuth identity that already belongs to another account fails;
+    // in that case sign in to that existing account instead.
+    const authErr = new URLSearchParams(window.location.hash.slice(1) || window.location.search).get('error_code');
+    const lastProvider = localStorage.getItem('enjaz_last_oauth_provider');
+    if (authErr === 'identity_already_exists' && lastProvider) {
+      const cleanParams = new URLSearchParams(window.location.search);
+      ['error', 'error_code', 'error_description'].forEach(k => cleanParams.delete(k));
+      const cleanSearch = cleanParams.toString() ? `?${cleanParams}` : '';
+      await db.auth.signInWithOAuth({
+        provider: lastProvider,
+        options: { redirectTo: `${window.location.origin}${window.location.pathname}${cleanSearch}` }
+      });
+      return;
+    }
+
+    currentUser = await ensureSession();
     renderAuthUI();
 
     db.auth.onAuthStateChange((event, session) => {
       currentUser = session ? session.user : null;
       renderAuthUI();
+      if (event === 'USER_UPDATED' && currentUser) {
+        setTimeout(() => registerCurrentUserInProject(), 0);
+      }
       // Ignore INITIAL_SESSION (boot() loads right below) and defer outside Supabase auth lock to prevent deadlock
       if (event === 'SIGNED_IN' && currentUser) {
         setTimeout(() => loadAllData(), 0);

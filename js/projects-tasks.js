@@ -194,29 +194,50 @@ async function saveProject() {
   if (!name) return showToast('اكتب اسم المشروع');
 
   closeProjectModal();
+  const isEn = currentLang === 'en';
   if (editId) {
-    const { error } = await db.from('projects').update({ name, status, description, icon }).eq('id', editId);
+    let { error } = await db.from('projects').update({ name, status, description, icon }).eq('id', editId);
     if (error) {
       document.getElementById('schemaAlert').classList.remove('hidden');
-      await db.from('projects').update({ name, description, icon }).eq('id', editId);
+      ({ error } = await db.from('projects').update({ name, description, icon }).eq('id', editId));
     }
-    showToast('تم تحديث بيانات المشروع ✓');
+    showToast(error
+      ? (isEn ? 'Failed to update project' : 'تعذر تحديث المشروع')
+      : (isEn ? 'Project updated ✓' : 'تم تحديث بيانات المشروع ✓'));
   } else {
-    const newId = 'PRJ-' + Math.random().toString(36).substring(2, 6).toUpperCase();
-    const { error } = await db.from('projects').insert([{ id: newId, name, status, description, icon, created_at: Date.now() }]);
+    const newId = generateProjectCode();
+    let { error } = await db.from('projects').insert([{ id: newId, name, status, description, icon, created_at: Date.now() }]);
     if (error) {
       document.getElementById('schemaAlert').classList.remove('hidden');
-      await db.from('projects').insert([{ id: newId, name, description, icon, created_at: Date.now() }]);
+      ({ error } = await db.from('projects').insert([{ id: newId, name, description, icon, created_at: Date.now() }]));
+    }
+    if (error) {
+      console.error('Project insert failed:', error);
+      showToast(isEn ? 'Failed to create project' : 'تعذر إنشاء المشروع');
+      loadAllData();
+      return;
     }
     addLocalAllowedProjectId(newId);
     isSharedMode = false;
     sharedOnlyProjectId = null;
     activeProjectId = newId;
-    window.history.replaceState({}, '', `?project=${newId}`);
+    window.history.replaceState({}, '', `?project=${encodeURIComponent(newId)}`);
     await registerCurrentUserInProject('Owner');
     showToast(`تم إنشاء مشروع "${name}" 🎉`);
   }
   loadAllData();
+}
+
+// Project codes double as invitations, so they must not be guessable:
+// 12 characters from a 32-symbol alphabet = 60 bits of randomness
+// (32 divides 256, so the modulo below has no bias).
+function generateProjectCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  let code = '';
+  for (const b of bytes) code += alphabet[b % alphabet.length];
+  return `PRJ-${code.slice(0, 4)}-${code.slice(4, 8)}-${code.slice(8)}`;
 }
 
 async function deleteEditingProject() {
@@ -241,13 +262,12 @@ async function deleteProjectById(projId) {
   });
   if (!ok) return;
 
-  const [tasksDel, membersDel] = await Promise.all([
-    db.from('tasks').delete().eq('project_id', projId),
-    db.from('project_members').delete().eq('project_id', projId)
-  ]);
-  const { error: projDelErr } = await db.from('projects').delete().eq('id', projId);
-  if (tasksDel.error || membersDel.error || projDelErr) {
-    showToast(isEn ? 'Failed to delete project' : 'تعذر حذف المشروع');
+  // Tasks and members are removed by ON DELETE CASCADE in the database.
+  // Only the project owner is allowed to delete (enforced by RLS), so check
+  // that a row was actually deleted.
+  const { data: deleted, error: projDelErr } = await db.from('projects').delete().eq('id', projId).select('id');
+  if (projDelErr || !deleted || deleted.length === 0) {
+    showToast(isEn ? 'Only the project owner can delete it' : 'فقط مالك المشروع يمكنه حذفه');
     loadAllData();
     return;
   }
@@ -265,22 +285,16 @@ async function joinProjectByCode() {
   const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
   if (!code) return;
 
-  const { data: found, error } = await db
-    .from('projects')
-    .select('*')
-    .ilike('id', code)
-    .maybeSingle();
-
-  if (error || !found) {
-    return showToast('لم يتم العثور على مشروع بهذا الكود');
+  const found = await joinProjectRpc(code, 'Member');
+  if (!found) {
+    return showToast(currentLang === 'en' ? 'No project found with this code' : 'لم يتم العثور على مشروع بهذا الكود');
   }
 
   addLocalAllowedProjectId(found.id);
   activeProjectId = found.id;
-  window.history.replaceState({}, '', `?project=${found.id}`);
+  window.history.replaceState({}, '', `?project=${encodeURIComponent(found.id)}`);
   document.getElementById('joinCodeInput').value = '';
   toggleMobileSidebar(false);
-  await registerCurrentUserInProject('Member');
   await loadAllData();
   showToast(`تم الانضمام لمشروع: ${found.name}`);
 }
