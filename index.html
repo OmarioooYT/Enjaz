@@ -42,6 +42,7 @@
         <a href="#overview" data-i18n="navOverview" class="hover:text-white transition-colors">نظرة عامة</a>
         <a href="#journey" data-i18n="navJourney" class="hover:text-white transition-colors">رحلة المستخدم</a>
         <a href="#features" data-i18n="navFeatures" class="hover:text-white transition-colors">المميزات</a>
+        <a href="#whats-new" class="hover:text-white transition-colors hidden lg:inline-flex items-center gap-1.5"><span data-i18n="navNew">الجديد</span><span class="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" aria-hidden="true"></span></a>
         <a href="#use-cases" data-i18n="navUseCases" class="hover:text-white transition-colors">لمن إنجاز؟</a>
       </nav>
 
@@ -90,6 +91,8 @@
         class="block px-3 py-2 rounded-lg text-sm font-medium text-zinc-200 hover:bg-white/5">رحلة المستخدم</a>
       <a href="#features" onclick="toggleMobileNav(false)" data-i18n="navFeatures"
         class="block px-3 py-2 rounded-lg text-sm font-medium text-zinc-200 hover:bg-white/5">المميزات</a>
+      <a href="#whats-new" onclick="toggleMobileNav(false)" data-i18n="navNew"
+        class="block px-3 py-2 rounded-lg text-sm font-medium text-zinc-200 hover:bg-white/5">الجديد</a>
       <a href="#use-cases" onclick="toggleMobileNav(false)" data-i18n="navUseCases"
         class="block px-3 py-2 rounded-lg text-sm font-medium text-zinc-200 hover:bg-white/5">لمن إنجاز؟</a>
       <a href="enjaz.html"
@@ -603,7 +606,7 @@
               <span data-i18n="f1Badge" class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-300">إدارة المهام</span>
             </div>
             <h3 data-i18n="f1Title" class="font-display font-bold text-lg sm:text-xl text-white depth-sm">
-              لوحة كانبان وعرض قائمة مع سحب وإفلات سلس
+              لوحة كانبان وجدول وتقويم مع سحب وإفلات سلس
             </h3>
             <p data-i18n="f1Desc" class="mt-2.5 text-sm text-zinc-400 leading-relaxed">
               نظّم المهام عبر حالات (قيد الانتظار، قيد التنفيذ، مكتمل) مع دعم السحب والإفلات، الأولويات، مواعيد الاستحقاق، تنبيهات التأخر، والبحث والفلترة الفورية حسب العضو.
@@ -708,6 +711,128 @@
               </div>
             </div>
           </article>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- What's New Section -->
+    <section id="whats-new" class="py-20 sm:py-24 border-t border-white/5 bg-surface/35">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-2xl reveal">
+          <p class="text-xs font-bold uppercase tracking-widest text-brand inline-flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded-full bg-brand text-white text-[10px] tracking-normal" data-i18n="nwPill">جديد</span>
+            <span data-i18n="nwEyebrow">آخر التحديثات</span>
+          </p>
+          <h2 data-i18n="nwTitle" class="mt-2 font-display font-extrabold text-2xl sm:text-4xl text-white leading-tight">تعاون أعمق، وتنظيم أذكى، وتجربة أسرع</h2>
+          <p data-i18n="nwDesc" class="mt-3 text-sm sm:text-base text-zinc-400 leading-relaxed">إضافات جديدة بتخلّي الفريق كله على نفس الصفحة: نقاش جوه كل مهمة، تقويم للمواعيد، سجل لكل حاجة بتحصل، وإشعارات بتوصلك في وقتها.</p>
+        </div>
+
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 sm:gap-5 scene-3d">
+          <article data-tilt data-tilt-max="5" class="tilt-3d bento-card rounded-3xl p-6 sm:p-7 lg:col-span-2 flex flex-col reveal">
+            <div class="tilt-glare" aria-hidden="true"></div>
+            <div class="flex items-center justify-between gap-3 mb-4 depth-sm">
+              <div class="w-11 h-11 rounded-2xl bg-brand/15 border border-brand/30 text-brand flex items-center justify-center">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              </div>
+              <span data-i18n="nw1Badge" class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-brand/10 border border-brand/25 text-orange-200">عرض جديد</span>
+            </div>
+            <h3 data-i18n="nw1Title" class="font-display font-bold text-lg text-white depth-sm">تقويم المهام</h3>
+            <p data-i18n="nw1Desc" class="mt-2 text-sm text-zinc-400 leading-relaxed">شوف مواعيد التسليم على تقويم شهري، واسحب أي مهمة ليوم تاني عشان تغيّر موعدها. والمهام المتأخرة بتبان بالأحمر.</p>
+            <div class="mt-5 pt-1 mt-auto depth-sm" aria-hidden="true"><div class="rounded-2xl bg-obsidian/70 border border-white/[0.06] p-3">
+                <div class="flex items-center justify-between mb-2"><span data-i18n="nwMockMonth" class="text-[11px] font-bold text-zinc-200">نوفمبر</span><span class="text-[10px] text-zinc-500">◀ ▶</span></div>
+                <div class="grid grid-cols-7 gap-1"><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">1</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">2</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">3<span class="absolute bottom-1 inset-x-1 h-1 rounded-full bg-emerald-400/80"></span></div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">4</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">5<span class="absolute bottom-1 inset-x-1 h-1 rounded-full bg-rose-400/80"></span></div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">6</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">7</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">8</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">9<span class="absolute bottom-1 inset-x-1 h-1 rounded-full bg-brand/80"></span></div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">10</div><div class="aspect-square rounded-md bg-brand text-white font-bold text-[9px] font-mono flex items-start justify-end p-1 relative">11</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">12</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">13</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">14</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">15</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">16<span class="absolute bottom-1 inset-x-1 h-1 rounded-full bg-brand/80"></span></div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">17</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">18</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">19</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">20</div><div class="aspect-square rounded-md bg-white/[0.04] text-zinc-500 text-[9px] font-mono flex items-start justify-end p-1 relative">21</div></div>
+              </div></div>
+          </article>
+          <article data-tilt data-tilt-max="5" class="tilt-3d bento-card rounded-3xl p-6 sm:p-7 lg:col-span-2 flex flex-col reveal">
+            <div class="tilt-glare" aria-hidden="true"></div>
+            <div class="flex items-center justify-between gap-3 mb-4 depth-sm">
+              <div class="w-11 h-11 rounded-2xl bg-sky-500/15 border border-sky-400/30 text-sky-300 flex items-center justify-center">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <span data-i18n="nw2Badge" class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-sky-500/10 border border-sky-400/25 text-sky-300">تعاون</span>
+            </div>
+            <h3 data-i18n="nw2Title" class="font-display font-bold text-lg text-white depth-sm">تعليقات وإشارة @</h3>
+            <p data-i18n="nw2Desc" class="mt-2 text-sm text-zinc-400 leading-relaxed">اتناقشوا جوه المهمة نفسها بدل الشات. اكتب @ واختار اسم زميلك، وهيوصله إشعار على طول.</p>
+            <div class="mt-5 pt-1 mt-auto depth-sm" aria-hidden="true"><div class="rounded-2xl bg-obsidian/70 border border-white/[0.06] p-3 space-y-2">
+                <div class="flex items-start gap-2"><span class="w-6 h-6 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-bold flex items-center justify-center shrink-0">S</span>
+                  <p class="text-[11px] text-zinc-300 bg-white/[0.04] rounded-xl px-2.5 py-1.5"><span class="text-brand font-semibold" data-i18n="nwMockMention">@عمر</span> <span data-i18n="nwMockComment1">راجع التصميم قبل التسليم</span></p></div>
+                <div class="flex items-start gap-2"><span class="w-6 h-6 rounded-full bg-brand/20 text-brand text-[10px] font-bold flex items-center justify-center shrink-0">O</span>
+                  <p class="text-[11px] text-zinc-300 bg-white/[0.04] rounded-xl px-2.5 py-1.5" data-i18n="nwMockComment2">تمام، هخلّصه النهارده 👍</p></div>
+                <div class="h-7 rounded-lg border border-brand/40 bg-surface/80 px-2.5 flex items-center text-[11px] text-zinc-500">@<span class="w-px h-3.5 bg-brand ms-0.5 animate-pulse"></span></div>
+              </div></div>
+          </article>
+          <article data-tilt data-tilt-max="5" class="tilt-3d bento-card rounded-3xl p-6 sm:p-7 md:col-span-2 lg:col-span-2 flex flex-col reveal">
+            <div class="tilt-glare" aria-hidden="true"></div>
+            <div class="flex items-center justify-between gap-3 mb-4 depth-sm">
+              <div class="w-11 h-11 rounded-2xl bg-violet-500/15 border border-violet-400/30 text-violet-300 flex items-center justify-center">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </div>
+              <span data-i18n="nw3Badge" class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-400/25 text-violet-300">بالذكاء الاصطناعي</span>
+            </div>
+            <h3 data-i18n="nw3Title" class="font-display font-bold text-lg text-white depth-sm">خطوات المهمة</h3>
+            <p data-i18n="nw3Desc" class="mt-2 text-sm text-zinc-400 leading-relaxed">قسّم أي مهمة لخطوات صغيرة، أو خلّي الذكاء الاصطناعي يقسّمها لك بضغطة. ونسبة التقدم بتظهر على الكارت.</p>
+            <div class="mt-5 pt-1 mt-auto depth-sm" aria-hidden="true"><div class="rounded-2xl bg-obsidian/70 border border-white/[0.06] p-3 space-y-2">
+                <div class="flex items-center justify-between"><span class="text-[10px] font-mono text-zinc-400">2/4</span><span class="text-[10px] font-semibold text-violet-300">✦ AI</span></div>
+                <div class="h-1 rounded-full bg-white/[0.06] overflow-hidden"><div class="h-full w-1/2 bg-brand"></div></div>
+                <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-md bg-emerald-500 text-obsidian flex items-center justify-center shrink-0"><svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="M5 13l4 4L19 7"/></svg></span><span data-i18n="nwMockStep1" class="text-[11px] line-through text-zinc-500">جمع المتطلبات</span></div><div class="flex items-center gap-2"><span class="w-4 h-4 rounded-md bg-emerald-500 text-obsidian flex items-center justify-center shrink-0"><svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="M5 13l4 4L19 7"/></svg></span><span data-i18n="nwMockStep2" class="text-[11px] line-through text-zinc-500">رسم الواجهة</span></div><div class="flex items-center gap-2"><span class="w-4 h-4 rounded-md border border-white/20 shrink-0"></span><span data-i18n="nwMockStep3" class="text-[11px] text-zinc-200">مراجعة مع الفريق</span></div><div class="flex items-center gap-2"><span class="w-4 h-4 rounded-md border border-white/20 shrink-0"></span><span data-i18n="nwMockStep4" class="text-[11px] text-zinc-200">التسليم</span></div>
+              </div></div>
+          </article>
+          <article data-tilt data-tilt-max="7" class="tilt-3d bento-card rounded-3xl p-6 lg:col-span-2 reveal">
+            <div class="tilt-glare" aria-hidden="true"></div>
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-400/25 text-emerald-300 flex items-center justify-center mb-4 depth-sm">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+            <h3 data-i18n="nw4Title" class="font-display font-bold text-base sm:text-lg text-white depth-sm">سجل النشاط</h3>
+            <p data-i18n="nw4Desc" class="mt-2 text-sm text-zinc-400 leading-relaxed">كل تغيير في المشروع بيتسجل لحظة بلحظة: مين أضاف، مين نقل، ومين علّق. وقاعدة البيانات بتسجّله بنفسها، فمحدش يقدر يزوّره.</p>
+          </article>
+          <article data-tilt data-tilt-max="7" class="tilt-3d bento-card rounded-3xl p-6 lg:col-span-2 reveal">
+            <div class="tilt-glare" aria-hidden="true"></div>
+            <div class="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-400/25 text-amber-300 flex items-center justify-center mb-4 depth-sm">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </div>
+            <h3 data-i18n="nw5Title" class="font-display font-bold text-base sm:text-lg text-white depth-sm">إشعارات ذكية</h3>
+            <p data-i18n="nw5Desc" class="mt-2 text-sm text-zinc-400 leading-relaxed">بيوصلك تنبيه لما حد يسند لك مهمة، أو يعمل لك @، أو يعلّق على مهمتك، حتى لو التطبيق في تاب تاني.</p>
+          </article>
+          <article data-tilt data-tilt-max="7" class="tilt-3d bento-card rounded-3xl p-6 lg:col-span-2 reveal">
+            <div class="tilt-glare" aria-hidden="true"></div>
+            <div class="w-10 h-10 rounded-xl bg-brand/15 border border-brand/30 text-brand flex items-center justify-center mb-4 depth-sm">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v2M12 19v2M5.6 5.6 7 7M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4 7 17M17 7l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg>
+            </div>
+            <h3 data-i18n="nw6Title" class="font-display font-bold text-base sm:text-lg text-white depth-sm">ملخص يومي</h3>
+            <p data-i18n="nw6Desc" class="mt-2 text-sm text-zinc-400 leading-relaxed">أول ما تفتح: مهام النهارده، والمتأخرة، واللي الفريق خلّصها. ومعاه ملخص مكتوب بالذكاء الاصطناعي يقولك تبدأ بإيه.</p>
+          </article>
+          <article data-tilt data-tilt-max="7" class="tilt-3d bento-card rounded-3xl p-6 lg:col-span-2 reveal">
+            <div class="tilt-glare" aria-hidden="true"></div>
+            <div class="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-400/25 text-rose-300 flex items-center justify-center mb-4 depth-sm">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>
+            </div>
+            <h3 data-i18n="nw7Title" class="font-display font-bold text-base sm:text-lg text-white depth-sm">سرعة فورية وزرار تراجع</h3>
+            <p data-i18n="nw7Desc" class="mt-2 text-sm text-zinc-400 leading-relaxed">أي تعديل بيظهر في لحظته من غير انتظار. ولو مسحت مهمة بالغلط، رجّعها بزرار "تراجع".</p>
+          </article>
+          <article data-tilt data-tilt-max="7" class="tilt-3d bento-card rounded-3xl p-6 lg:col-span-2 reveal">
+            <div class="tilt-glare" aria-hidden="true"></div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-400/25 text-indigo-300 flex items-center justify-center mb-4 depth-sm">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+            </div>
+            <h3 data-i18n="nw8Title" class="font-display font-bold text-base sm:text-lg text-white depth-sm">تطبيق على موبايلك</h3>
+            <p data-i18n="nw8Desc" class="mt-2 text-sm text-zinc-400 leading-relaxed">ثبّت إنجاز كتطبيق على الموبايل أو الكمبيوتر، وتصفّح آخر بياناتك حتى من غير إنترنت.</p>
+          </article>
+          <article data-tilt data-tilt-max="7" class="tilt-3d bento-card rounded-3xl p-6 lg:col-span-2 reveal">
+            <div class="tilt-glare" aria-hidden="true"></div>
+            <div class="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-400/25 text-teal-300 flex items-center justify-center mb-4 depth-sm">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h3 data-i18n="nw9Title" class="font-display font-bold text-base sm:text-lg text-white depth-sm">مشاريعك محمية</h3>
+            <p data-i18n="nw9Desc" class="mt-2 text-sm text-zinc-400 leading-relaxed">مفيش حد يشوف مشروعك إلا أعضاؤه. الحماية متطبّقة جوه قاعدة البيانات نفسها، وكود المشروع بقى صعب يتخمّن.</p>
+          </article>
+        </div>
+
+        <div class="mt-10 flex justify-center reveal">
+          <a href="enjaz.html" class="btn-brand inline-flex items-center gap-2 h-11 px-6 rounded-xl text-sm font-semibold">
+            <span data-i18n="nwCta">جرّب المميزات الجديدة</span>
+            <svg class="w-4 h-4 rtl:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
         </div>
       </div>
     </section>
