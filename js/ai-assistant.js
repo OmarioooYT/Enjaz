@@ -26,6 +26,7 @@
     let aiDrawerOpen = false;
     let aiSelectedScope = 'project'; // 'project' or specific task.id
     let aiSending = false;
+    let aiPendingImage = null; // { dataUrl, name }
     let aiChatGen = {}; // Tracks clear-chat generations per chat key to discard stale in-flight replies
     let aiModel = AI_ALLOWED_MODELS.includes(localStorage.getItem(AI_STORAGE_KEY_MODEL))
       ? localStorage.getItem(AI_STORAGE_KEY_MODEL)
@@ -41,9 +42,109 @@
 
     function saveAiChatsToStorage() {
       try {
+        Object.keys(aiChats).forEach((k) => {
+          if (Array.isArray(aiChats[k]) && aiChats[k].length > 40) {
+            aiChats[k] = aiChats[k].slice(-40);
+          }
+        });
         localStorage.setItem(AI_STORAGE_KEY_CHATS, JSON.stringify(aiChats));
       } catch {
-        // Ignore quota errors
+        // If quota exceeded due to attached images, persist text-only copy as fallback
+        try {
+          const slim = {};
+          Object.keys(aiChats).forEach((k) => {
+            if (Array.isArray(aiChats[k])) {
+              slim[k] = aiChats[k].slice(-30).map(({ image: _img, ...rest }) => rest);
+            }
+          });
+          localStorage.setItem(AI_STORAGE_KEY_CHATS, JSON.stringify(slim));
+        } catch {
+          // Ignore storage quota errors
+        }
+      }
+    }
+
+    function updateAiImagePreviewUI() {
+      const wrap = document.getElementById('aiImagePreviewWrap');
+      const imgEl = document.getElementById('aiImagePreviewImg');
+      const nameEl = document.getElementById('aiImagePreviewName');
+      if (!wrap || !imgEl || !nameEl) return;
+      if (aiPendingImage && aiPendingImage.dataUrl) {
+        imgEl.src = aiPendingImage.dataUrl;
+        nameEl.textContent = aiPendingImage.name || (currentLang === 'en' ? 'Attached photo' : 'صورة مرفقة');
+        wrap.classList.remove('hidden');
+        wrap.classList.add('flex');
+      } else {
+        imgEl.src = '';
+        nameEl.textContent = '';
+        wrap.classList.add('hidden');
+        wrap.classList.remove('flex');
+      }
+    }
+
+    function clearAiPendingImage() {
+      aiPendingImage = null;
+      const input = document.getElementById('aiImageInput');
+      if (input) input.value = '';
+      updateAiImagePreviewUI();
+    }
+
+    function processAiImageFile(file) {
+      if (!file) return;
+      if (!file.type || !file.type.startsWith('image/')) {
+        showToast(currentLang === 'en' ? 'Please choose a valid image file' : 'يرجى اختيار ملف صورة صالح');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        showToast(currentLang === 'en' ? 'Image is too large (max 10MB)' : 'حجم الصورة كبير جداً (الحد الأقصى 10MB)');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1024;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            const scale = Math.min(maxDim / w, maxDim / h);
+            w = Math.round(w * scale);
+            h = Math.round(h * scale);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          aiPendingImage = { dataUrl, name: file.name || 'image.jpg' };
+          updateAiImagePreviewUI();
+        };
+        img.onerror = () => {
+          showToast(currentLang === 'en' ? 'Could not read image' : 'تعذر قراءة الصورة');
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleAiImageSelect(e) {
+      const file = e.target && e.target.files && e.target.files[0];
+      processAiImageFile(file);
+    }
+
+    function handleAiInputPaste(e) {
+      const items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type && items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            e.preventDefault();
+            processAiImageFile(file);
+            break;
+          }
+        }
       }
     }
 
@@ -567,8 +668,11 @@ Rules for \`enjaz-tasks\`:
           wrap.className = `flex flex-col ${isUser ? 'items-end' : 'items-start'} animate-fade-up`;
 
           if (isUser) {
+            const imgHtml = msg.image
+              ? `<img src="${escapeHtml(msg.image)}" alt="Uploaded photo" class="max-h-48 w-auto rounded-xl border border-white/15 mb-2 object-cover" />`
+              : '';
             wrap.innerHTML = `
-              <div class="max-w-[86%] rounded-2xl rounded-ee-md bg-gradient-to-br from-brand/22 to-brand/12 border border-brand/35 px-3.5 py-2.5 text-[13px] text-zinc-100 leading-relaxed whitespace-pre-wrap break-words shadow-[0_6px_18px_-10px_rgba(252,106,13,0.45)]">${escapeHtml(msg.text)}</div>
+              <div class="max-w-[86%] rounded-2xl rounded-ee-md bg-gradient-to-br from-brand/22 to-brand/12 border border-brand/35 px-3.5 py-2.5 text-[13px] text-zinc-100 leading-relaxed whitespace-pre-wrap break-words shadow-[0_6px_18px_-10px_rgba(252,106,13,0.45)]">${imgHtml}${escapeHtml(msg.text)}</div>
             `;
           } else {
             const segments = parseAiMessageSegments(msg.text || '');
@@ -722,14 +826,15 @@ Rules for \`enjaz-tasks\`:
       if (!msg.addedTasks[blockIdx]) msg.addedTasks[blockIdx] = {};
 
       const baseTs = Date.now();
-      let addedCount = 0;
+      const pendingIndices = [];
+      const batch = [];
 
       for (let i = 0; i < indicesToAdd.length; i++) {
         const tIdx = indicesToAdd[i];
         const tk = seg.tasks[tIdx];
         if (!tk || msg.addedTasks[blockIdx][tIdx]) continue;
-
-        const newTask = {
+        pendingIndices.push(tIdx);
+        batch.push({
           id: 'TSK-' + (baseTs + i) + '-' + Math.random().toString(36).slice(2, 5),
           project_id: activeProjectId,
           title: tk.title,
@@ -744,29 +849,27 @@ Rules for \`enjaz-tasks\`:
           completed_at: null,
           created_by: user,
           created_at: baseTs + i
-        };
-
-        let insertErr = null;
-        const { error } = await db.from('tasks').insert([newTask]);
-        if (error) {
-          const { notes: _n, status: _s, due_date: _d, ...legacyTask } = newTask;
-          const { error: legacyErr } = await db.from('tasks').insert([legacyTask]);
-          insertErr = legacyErr || null;
-        }
-        if (insertErr) {
-          showToast((currentLang === 'en' ? 'Failed to add task: ' : 'تعذر إضافة المهمة: ') + (insertErr.message || 'Database error'));
-          continue;
-        }
-        msg.addedTasks[blockIdx][tIdx] = true;
-        addedCount++;
+        });
       }
 
-      if (addedCount > 0) {
-        saveAiChatsToStorage();
-        renderAiMessages();
-        showToast(`${t('aiTasksAddedToast')} (${addedCount})`);
-        loadAllData();
+      if (batch.length === 0) return;
+
+      let { error: insertErr } = await db.from('tasks').insert(batch);
+      if (insertErr) {
+        const legacyBatch = batch.map(({ notes: _n, status: _s, due_date: _d, ...rest }) => rest);
+        ({ error: insertErr } = await db.from('tasks').insert(legacyBatch));
       }
+
+      if (insertErr) {
+        showToast((currentLang === 'en' ? 'Failed to add tasks: ' : 'تعذر إضافة المهام: ') + (insertErr.message || 'Database error'));
+        return;
+      }
+
+      pendingIndices.forEach((tIdx) => { msg.addedTasks[blockIdx][tIdx] = true; });
+      saveAiChatsToStorage();
+      renderAiMessages();
+      showToast(`${t('aiTasksAddedToast')} (${batch.length})`);
+      loadAllData();
     }
 
     function autoResizeAiInput(el) {
@@ -808,18 +911,29 @@ Rules for \`enjaz-tasks\`:
     async function sendAiMessage(presetText = null) {
       if (aiSending) return;
       const input = document.getElementById('aiChatInput');
-      const userText = (presetText !== null ? presetText : (input ? input.value : '')).trim();
-      if (!userText) return;
+      const attachedImage = presetText === null && aiPendingImage ? aiPendingImage.dataUrl : null;
+      let userText = (presetText !== null ? presetText : (input ? input.value : '')).trim();
+      if (!userText && !attachedImage) return;
+      if (!userText && attachedImage) {
+        userText = currentLang === 'en'
+          ? 'Analyze this image and suggest any relevant tasks for the project.'
+          : 'حلّل هذه الصورة واقترح أي مهام مناسبة للمشروع.';
+      }
 
       if (input && presetText === null) {
         input.value = '';
         input.style.height = 'auto';
       }
+      if (attachedImage) {
+        clearAiPendingImage();
+      }
 
       const chatKey = getAiChatKey();
       const requestGen = aiChatGen[chatKey] || 0;
       const history = getCurrentAiHistory();
-      history.push({ role: 'user', text: userText, ts: Date.now() });
+      const userEntry = { role: 'user', text: userText, ts: Date.now() };
+      if (attachedImage) userEntry.image = attachedImage;
+      history.push(userEntry);
       saveAiChatsToStorage();
 
       setAiSendingState(true);
@@ -835,12 +949,23 @@ Rules for \`enjaz-tasks\`:
         }
 
         const turns = history
-          .filter(m => !m.isError && typeof m.text === 'string' && m.text.trim())
+          .filter(m => !m.isError && ((typeof m.text === 'string' && m.text.trim()) || m.image))
           .slice(-20)
-          .map(m => ({
-            role: m.role === 'user' ? 'user' : 'assistant',
-            content: m.text
-          }));
+          .map(m => {
+            if (m.role === 'user' && m.image) {
+              return {
+                role: 'user',
+                content: [
+                  { type: 'text', text: m.text || 'Analyze this image.' },
+                  { type: 'image_url', image_url: { url: m.image } }
+                ]
+              };
+            }
+            return {
+              role: m.role === 'user' ? 'user' : 'assistant',
+              content: m.text
+            };
+          });
 
         while (turns.length > 0 && turns[0].role !== 'user') {
           turns.shift();
