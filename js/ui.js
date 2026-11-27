@@ -503,8 +503,40 @@ function getTaskStatus(t) {
 
 function isOverdue(dateStr, status) {
   if (!dateStr || status === 'done') return false;
-  const today = new Date().toISOString().split('T')[0];
-  return dateStr < today;
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return dateStr < `${y}-${m}-${d}`;
+}
+
+async function copyTextSafe(text, successMsg) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      throw new Error('Clipboard API unavailable');
+    }
+    if (successMsg) showToast(successMsg);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok && successMsg) showToast(successMsg);
+      else if (!ok) showToast(currentLang === 'en' ? 'Could not copy to clipboard' : 'تعذر النسخ إلى الحافظة');
+      return ok;
+    } catch {
+      showToast(currentLang === 'en' ? 'Could not copy to clipboard' : 'تعذر النسخ إلى الحافظة');
+      return false;
+    }
+  }
 }
 
 function showToast(msg) {
