@@ -226,6 +226,29 @@ function randomId(prefix) {
   return `${prefix}-${Date.now()}-${Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')}`;
 }
 
+// Turns a Supabase/PostgREST error into a short, actionable reason.
+function describeDbError(error) {
+  if (!error) return '';
+  const code = error.code || '';
+  const msg = error.message || String(error);
+  if (code === 'PGRST205' || code === '42P01' || /schema cache|does not exist/i.test(msg)) {
+    return currentLang === 'en'
+      ? 'database table missing — run supabase/schema.sql again'
+      : 'جدول ناقص في قاعدة البيانات — شغّل supabase/schema.sql تاني';
+  }
+  if (/permission denied for (table|schema|function)/i.test(msg)) {
+    return currentLang === 'en'
+      ? 'the API has no access to this table — run supabase/schema.sql again'
+      : 'التطبيق مالوش صلاحية على الجدول — شغّل supabase/schema.sql تاني';
+  }
+  if (code === '42501' || /row-level security/i.test(msg)) {
+    return currentLang === 'en'
+      ? 'permission denied by the database (are you a member of this project?)'
+      : 'قاعدة البيانات رفضت الصلاحية (اتأكد إنك عضو في المشروع)';
+  }
+  return `${msg}${code ? ` (${code})` : ''}`;
+}
+
 // Calls Puter AI with the user's chosen model, falling back like the chat does.
 async function aiQuickText(systemPrompt, userPrompt) {
   if (!window.puter || !window.puter.ai || typeof window.puter.ai.chat !== 'function') {
@@ -613,7 +636,7 @@ async function postComment() {
     if (!input.value) input.value = body;
     renderModalComments();
     renderWorkspace();
-    showToast(t('commentFailed'));
+    showToast(`${t('commentFailed')}: ${describeDbError(error)}`, { duration: 8000 });
   }
 }
 
