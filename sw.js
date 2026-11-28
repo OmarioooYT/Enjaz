@@ -11,7 +11,7 @@
 
 // Enjaz service worker: offline app shell + notification clicks.
 // Bump CACHE_VERSION when the list of shell files changes.
-const CACHE_VERSION = 'enjaz-v2';
+const CACHE_VERSION = 'enjaz-v3';
 const APP_SHELL = [
   'enjaz.html',
   'index.html',

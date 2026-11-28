@@ -61,17 +61,22 @@
     <!-- Brand with Custom Logo -->
     <div class="h-14 lg:h-16 px-4 border-b border-borderSubtle flex items-center justify-between shrink-0">
       <div class="flex items-center gap-3">
-        <img
-          src="assets/brand-logo.png"
-          alt="إنجاز"
-          class="w-10 h-10 lg:w-11 lg:h-11 object-contain drop-shadow-[0_2px_10px_rgba(252,106,13,0.35)] shrink-0" />
+        <!-- Logo and name link back to the landing page -->
+        <a href="./" data-i18n-title="goHomeTitle" title="الصفحة الرئيسية"
+          class="group shrink-0 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60">
+          <img
+            src="assets/brand-logo.png"
+            alt="إنجاز"
+            class="w-10 h-10 lg:w-11 lg:h-11 object-contain drop-shadow-[0_2px_10px_rgba(252,106,13,0.35)] transition-transform duration-200 group-hover:scale-110 group-active:scale-95" />
+        </a>
         <div>
-          <div class="flex items-center gap-2">
+          <a href="./" data-i18n-title="goHomeTitle" title="الصفحة الرئيسية" tabindex="-1" aria-hidden="true"
+            class="flex items-center gap-2 w-fit">
             <span data-i18n="brandName"
-              class="font-display font-extrabold text-[15px] tracking-tight text-white">إنجاز</span>
+              class="font-display font-extrabold text-[15px] tracking-tight text-white hover:text-brand transition-colors">إنجاز</span>
             <span
               class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-brand/15 text-brand border border-brand/25 font-semibold tracking-wider">TEAMS</span>
-          </div>
+          </a>
           <div class="flex items-center gap-1.5 mt-0.5">
             <span id="syncDot" class="w-1.5 h-1.5 rounded-full bg-brand animate-pulse"></span>
             <span id="syncText" class="text-[11px] text-zinc-400">جاري الاتصال...</span>
