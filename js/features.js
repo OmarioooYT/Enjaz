@@ -11,6 +11,7 @@
  */
 
 Object.assign(I18N.ar, {
+  goHomeTitle: 'الصفحة الرئيسية',
   undoBtn: 'تراجع',
   taskDeletedUndo: 'تم حذف المهمة',
   taskRestored: 'تمت استعادة المهمة ↩',
@@ -96,6 +97,7 @@ Object.assign(I18N.ar, {
 });
 
 Object.assign(I18N.en, {
+  goHomeTitle: 'Back to home page',
   undoBtn: 'Undo',
   taskDeletedUndo: 'Task deleted',
   taskRestored: 'Task restored ↩',
