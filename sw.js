@@ -11,7 +11,7 @@
 
 // Enjaz service worker: offline app shell + notification clicks.
 // Bump CACHE_VERSION when the list of shell files changes.
-const CACHE_VERSION = 'enjaz-v3';
+const CACHE_VERSION = 'enjaz-v4';
 const APP_SHELL = [
   'enjaz.html',
   'index.html',
@@ -29,6 +29,7 @@ const APP_SHELL = [
   'js/projects-tasks.js',
   'js/ai-assistant.js',
   'js/features.js',
+  'js/ai-files.js',
   'js/app.js',
   'js/home.js',
   'js/tailwind-config.js',
@@ -44,7 +45,8 @@ const CDN_HOSTS = [
   'cdn.jsdelivr.net',
   'js.puter.com',
   'fonts.googleapis.com',
-  'fonts.gstatic.com'
+  'fonts.gstatic.com',
+  'cdn.sheetjs.com'
 ];
 
 self.addEventListener('install', (event) => {

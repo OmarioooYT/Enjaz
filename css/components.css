@@ -371,3 +371,9 @@ html[dir="ltr"] #aiDrawer.ai-drawer-closed {
   border-color: rgba(252, 106, 13, 0.6) !important;
   background: rgba(252, 106, 13, 0.08) !important;
 }
+
+/* AI drawer: highlight while files are dragged over it */
+#aiDrawer.ai-drop-active {
+  outline: 2px dashed rgba(252, 106, 13, 0.7);
+  outline-offset: -8px;
+}

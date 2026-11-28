@@ -60,7 +60,8 @@
 
 **AI (via [Puter.js](https://puter.com), no API key needed)**
 - **Chat assistant** that knows the project or task you're looking at, with 10+ models and automatic fallback.
-- **Turns goals into task cards** you add with one click; can also read images you attach.
+- **Turns goals into task cards** you add with one click.
+- **Reads your files:** attach images, PDFs, Word (`.docx`), Excel/CSV, or text and code files, up to 5 per message. You can use the paperclip, drag and drop, or paste. Files are read in your browser and their text is sent to the AI with your message.
 - **"Break it down"** writes a checklist for a task.
 - **Daily summary** card, with an optional AI-written brief on what to focus on.
 
@@ -161,7 +162,8 @@ Any static host works: GitHub Pages, Netlify, Vercel, Cloudflare Pages. With **G
 │   ├── ai-assistant.js      8. AI chat and task divider
 │   ├── features.js          9. Comments, checklist, calendar, activity,
 │   │                           notifications, summary, undo, offline
-│   ├── app.js              10. Startup and keyboard shortcuts
+│   ├── ai-files.js         10. Reading PDF/Word/Excel/text attachments for the AI
+│   ├── app.js              11. Startup and keyboard shortcuts
 │   ├── home.js              Landing page logic
 │   └── tailwind-config.js   Shared Tailwind theme
 ├── supabase/

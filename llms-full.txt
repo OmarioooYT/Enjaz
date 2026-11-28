@@ -39,7 +39,8 @@ Enjaz is a free, Arabic-first team project manager with Kanban, table and calend
 
 ### AI assistant (powered by Puter.js, no API key required)
 - Chat drawer that understands the current project or task.
-- Suggests tasks as cards that can be added to the board in one click; can read attached images.
+- Suggests tasks as cards that can be added to the board in one click.
+- Reads attached files: images, PDF, Word (.docx), Excel/CSV and text or code files (up to 5 per message, by button, drag and drop, or paste). Files are read in the browser and their text is sent to the AI with the question.
 - "Break it down": turns a task into a 3-7 step checklist.
 - Daily summary: today's tasks, overdue tasks and what teammates finished, plus an optional AI-written brief.
 - Supports more than 10 AI models with automatic fallback.
